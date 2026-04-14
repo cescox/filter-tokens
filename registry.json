@@ -14,10 +14,6 @@
         {
           "path": "registry/new-york/filter-tokens/filter-tokens.tsx",
           "type": "registry:component"
-        },
-        {
-          "path": "registry/new-york/filter-tokens/icons.tsx",
-          "type": "registry:component"
         }
       ]
     }

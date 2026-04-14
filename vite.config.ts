@@ -8,6 +8,7 @@ export default defineConfig({
     react(),
     dts({ include: ['src'], rollupTypes: true }),
   ],
+  publicDir: false,
   build: {
     lib: {
       entry: resolve(__dirname, 'src/index.ts'),

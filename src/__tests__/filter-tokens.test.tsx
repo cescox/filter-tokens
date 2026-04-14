@@ -83,8 +83,8 @@ describe('FilterTokens component', () => {
 
   it('renders tokens from initial value', () => {
     render(<Setup initialValue={{ status: 'error' }} />);
-    expect(screen.getByText('Status:')).toBeInTheDocument();
-    expect(screen.getByText('Error')).toBeInTheDocument();
+    const token = screen.getByLabelText('Remove Status: Error');
+    expect(token).toBeInTheDocument();
   });
 
   it('removes a token on x click', async () => {
