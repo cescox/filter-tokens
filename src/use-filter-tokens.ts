@@ -28,6 +28,7 @@ export function useFilterTokens<const T extends FilterSchema>(
   const [selectedTokenIndex, setSelectedTokenIndex] = useState<number | null>(null);
   const [asyncOptions, setAsyncOptions] = useState<Record<string, Option[]>>({});
   const inputRef = useRef<HTMLInputElement>(null);
+  const pointerInsideRef = useRef(false);
 
   const ctx: FilterContext = useMemo(() => ({ filters: values }), [values]);
 
@@ -155,9 +156,8 @@ export function useFilterTokens<const T extends FilterSchema>(
 
   const items = useMemo(() => getDropdownItems(), [getDropdownItems]);
 
-  // Reset highlighted index when items change
   useEffect(() => {
-    setHighlightedIndex(0);
+    setHighlightedIndex(dropdownState.mode === 'categories' ? -1 : 0);
   }, [items.length, dropdownState.mode]);
 
   const selectItem = useCallback(
@@ -228,7 +228,7 @@ export function useFilterTokens<const T extends FilterSchema>(
   const closeDropdown = useCallback(() => {
     setDropdownState({ mode: 'closed' });
     setSearch('');
-    setHighlightedIndex(0);
+    setHighlightedIndex(-1);
     setSelectedTokenIndex(null);
   }, []);
 
@@ -326,12 +326,14 @@ export function useFilterTokens<const T extends FilterSchema>(
   const handleFocus = useCallback(() => {
     if (dropdownState.mode === 'closed') {
       setDropdownState({ mode: 'categories' });
+      setHighlightedIndex(-1);
     }
   }, [dropdownState.mode]);
 
   const handleBlur = useCallback(
     () => {
       requestAnimationFrame(() => {
+        if (pointerInsideRef.current) return;
         const active = document.activeElement;
         if (active && inputRef.current?.closest('[data-filter-tokens]')?.contains(active)) {
           return;
@@ -369,6 +371,10 @@ export function useFilterTokens<const T extends FilterSchema>(
       'aria-haspopup': 'listbox' as const,
       'aria-activedescendant': highlightedId,
       'aria-autocomplete': 'list' as const,
+    },
+    containerProps: {
+      onPointerDown: () => { pointerInsideRef.current = true; },
+      onPointerUp: () => { pointerInsideRef.current = false; },
     },
     dropdown: {
       open: isOpen,

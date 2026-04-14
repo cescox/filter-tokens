@@ -108,7 +108,7 @@ describe('FilterTokens component', () => {
     render(<Setup />);
     const input = screen.getByRole('combobox');
     await user.click(input);
-    await user.keyboard('{Enter}');
+    await user.keyboard('{ArrowDown}{Enter}');
     expect(screen.getByText('Success')).toBeInTheDocument();
     expect(screen.getByText('Error')).toBeInTheDocument();
   });

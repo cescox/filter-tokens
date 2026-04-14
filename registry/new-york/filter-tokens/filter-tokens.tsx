@@ -53,6 +53,7 @@ function FilterTokens<const T extends FilterSchema>({
 
   return (
     <div
+      {...ft.containerProps}
       data-slot="filter-tokens"
       data-filter-tokens
       className="relative"

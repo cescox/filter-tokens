@@ -148,9 +148,15 @@ export interface Dropdown {
   state: DropdownState;
 }
 
+export interface ContainerProps {
+  onPointerDown: () => void;
+  onPointerUp: () => void;
+}
+
 export interface FilterTokensReturn<T extends FilterSchema> {
   tokens: Token[];
   inputProps: InputProps;
+  containerProps: ContainerProps;
   dropdown: Dropdown;
   clear: () => void;
   setDateValue: (category: string, value: { from: string; to?: string } | { date: string }) => void;

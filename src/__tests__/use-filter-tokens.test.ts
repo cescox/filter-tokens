@@ -189,18 +189,19 @@ describe('useFilterTokens', () => {
     it('navigates highlighted index with arrows', () => {
       const { result } = setup();
       act(() => result.current.inputProps.onFocus());
+      expect(result.current.dropdown.highlightedIndex).toBe(-1);
+      keyDown(result, 'ArrowDown');
       expect(result.current.dropdown.highlightedIndex).toBe(0);
       keyDown(result, 'ArrowDown');
       expect(result.current.dropdown.highlightedIndex).toBe(1);
-      keyDown(result, 'ArrowDown');
-      expect(result.current.dropdown.highlightedIndex).toBe(2);
       keyDown(result, 'ArrowUp');
-      expect(result.current.dropdown.highlightedIndex).toBe(1);
+      expect(result.current.dropdown.highlightedIndex).toBe(0);
     });
 
     it('selects highlighted item on Enter', () => {
       const { result } = setup();
       act(() => result.current.inputProps.onFocus());
+      keyDown(result, 'ArrowDown');
       keyDown(result, 'Enter');
       expect(result.current.dropdown.state.mode).toBe('values');
     });
