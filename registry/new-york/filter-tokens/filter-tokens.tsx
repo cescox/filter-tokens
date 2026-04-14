@@ -248,6 +248,7 @@ function FilterTokens<const T extends FilterSchema>({
           {showCalendar && activeCategoryDef?.type === "date" && (
             <DateCalendarPanel
               isRange={activeCategoryDef.range === true}
+              showTime={"time" in activeCategoryDef && activeCategoryDef.time === true}
               onSelect={(dateValue) => {
                 ft.setDateValue(activeCategory!, dateValue);
                 setShowCalendar(false);
@@ -306,13 +307,50 @@ function FilterToken({
 
 function DateCalendarPanel({
   isRange,
+  showTime,
   onSelect,
 }: {
   isRange: boolean;
+  showTime?: boolean;
   onSelect: (value: { from: string; to?: string } | { date: string }) => void;
 }) {
   const [range, setRange] = React.useState<DateRange | undefined>();
   const [single, setSingle] = React.useState<Date | undefined>();
+  const [clickCount, setClickCount] = React.useState(0);
+  const [fromTime, setFromTime] = React.useState("00:00");
+  const [toTime, setToTime] = React.useState("23:59");
+  const [singleTime, setSingleTime] = React.useState("00:00");
+
+  const rangeComplete = isRange && clickCount >= 2 && range?.from;
+  const singleComplete = !isRange && single;
+  const needsTime = showTime && (rangeComplete || singleComplete);
+
+  const handleApply = () => {
+    if (isRange && range?.from) {
+      const from = applyTime(range.from, fromTime);
+      const to = range.to
+        ? applyTime(range.to, toTime)
+        : applyTime(range.from, toTime);
+      onSelect({ from: from.toISOString(), to: to.toISOString() });
+    } else if (single) {
+      onSelect({ date: applyTime(single, singleTime).toISOString() });
+    }
+  };
+
+  const handleRangeSelect = (newRange: DateRange | undefined) => {
+    setRange(newRange);
+    setClickCount((c) => c + 1);
+
+    if (!showTime && newRange?.from && clickCount >= 1) {
+      const to = newRange.to ?? newRange.from;
+      const endOfDay = new Date(to);
+      endOfDay.setHours(23, 59, 59, 999);
+      onSelect({
+        from: newRange.from.toISOString(),
+        to: endOfDay.toISOString(),
+      });
+    }
+  };
 
   if (isRange) {
     return (
@@ -320,21 +358,52 @@ function DateCalendarPanel({
         <Calendar
           mode="range"
           selected={range}
-          onSelect={(newRange) => {
-            setRange(newRange);
-            if (
-              newRange?.from &&
-              newRange?.to &&
-              newRange.from.getTime() !== newRange.to.getTime()
-            ) {
-              onSelect({
-                from: newRange.from.toISOString(),
-                to: newRange.to.toISOString(),
-              });
-            }
-          }}
+          onSelect={handleRangeSelect}
           numberOfMonths={1}
         />
+        {clickCount === 1 && (
+          <p className="text-xs text-muted-foreground text-center mt-1">
+            Select end date
+          </p>
+        )}
+        {needsTime && (
+          <div className="mt-2 flex flex-col gap-2">
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <label className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">
+                  From
+                </label>
+                <input
+                  type="time"
+                  className="w-full rounded-md border border-input bg-background px-2.5 py-1.5 text-sm"
+                  value={fromTime}
+                  onChange={(e) => setFromTime(e.target.value)}
+                />
+              </div>
+              <div>
+                <label className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">
+                  To
+                </label>
+                <input
+                  type="time"
+                  className="w-full rounded-md border border-input bg-background px-2.5 py-1.5 text-sm"
+                  value={toTime}
+                  onChange={(e) => setToTime(e.target.value)}
+                />
+              </div>
+            </div>
+            <button
+              type="button"
+              className="w-full rounded-md bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+              onMouseDown={(e) => {
+                e.preventDefault();
+                handleApply();
+              }}
+            >
+              Apply
+            </button>
+          </div>
+        )}
       </div>
     );
   }
@@ -346,13 +415,45 @@ function DateCalendarPanel({
         selected={single}
         onSelect={(day) => {
           setSingle(day);
-          if (day) {
+          if (day && !showTime) {
             onSelect({ date: day.toISOString() });
           }
         }}
       />
+      {needsTime && (
+        <div className="mt-2 flex flex-col gap-2">
+          <div>
+            <label className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">
+              Time
+            </label>
+            <input
+              type="time"
+              className="w-full rounded-md border border-input bg-background px-2.5 py-1.5 text-sm"
+              value={singleTime}
+              onChange={(e) => setSingleTime(e.target.value)}
+            />
+          </div>
+          <button
+            type="button"
+            className="w-full rounded-md bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+            onMouseDown={(e) => {
+              e.preventDefault();
+              handleApply();
+            }}
+          >
+            Apply
+          </button>
+        </div>
+      )}
     </div>
   );
+}
+
+function applyTime(date: Date, time: string): Date {
+  const [hours, minutes] = time.split(":").map(Number);
+  const d = new Date(date);
+  d.setHours(hours, minutes, 0, 0);
+  return d;
 }
 
 export { FilterTokens };

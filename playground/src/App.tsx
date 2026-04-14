@@ -33,8 +33,9 @@ const filters = {
     label: 'Period',
     icon: Calendar,
     range: true,
+    time: true,
     presets: [
-      { label: 'Last hour', from: () => new Date(Date.now() - 3600000) },
+      { label: 'Last hour', from: () => new Date(Date.now() - 3600000), to: () => new Date() },
       { label: 'Last 24h', from: () => new Date(Date.now() - 86400000) },
       { label: 'Last 7 days', from: () => new Date(Date.now() - 7 * 86400000) },
       { label: 'Last 30 days', from: () => new Date(Date.now() - 30 * 86400000) },

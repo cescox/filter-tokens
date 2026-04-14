@@ -42,6 +42,7 @@ export type DateFilterDef = {
   readonly label: string;
   readonly icon?: ComponentType<{ className?: string }>;
   readonly range?: boolean;
+  readonly time?: boolean;
   readonly presets?: readonly DateRangePreset[] | readonly DateSinglePreset[];
 };
 
