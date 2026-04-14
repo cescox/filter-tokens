@@ -383,7 +383,7 @@ export function useFilterTokens<const T extends FilterSchema>(
       onChange({} as FilterValues<T>);
       closeDropdown();
     },
-    setDateValue: (category: string, dateValue: { from: string; to: string } | { date: string }) => {
+    setDateValue: (category: string, dateValue: { from: string; to?: string } | { date: string }) => {
       const newValue = { ...values, [category]: dateValue as never };
       onChange(newValue as FilterValues<T>);
       closeDropdown();

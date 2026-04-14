@@ -318,7 +318,11 @@ function DateCalendarPanel({
           selected={range}
           onSelect={(newRange) => {
             setRange(newRange);
-            if (newRange?.from && newRange?.to) {
+            if (
+              newRange?.from &&
+              newRange?.to &&
+              newRange.from.getTime() !== newRange.to.getTime()
+            ) {
               onSelect({
                 from: newRange.from.toISOString(),
                 to: newRange.to.toISOString(),
