@@ -16,7 +16,8 @@ export type {
   Dropdown,
   InputProps,
   Option,
-  Preset,
+  DateRangePreset,
+  DateSinglePreset,
   OptionsOrFn,
   FilterContext,
 } from './types';

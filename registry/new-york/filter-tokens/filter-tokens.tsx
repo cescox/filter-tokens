@@ -176,7 +176,6 @@ function FilterTokens<const T extends FilterSchema>({
                     ft.dropdown.select(item);
                   }}
                 >
-                  {/* Multi-select: checkbox on the left */}
                   {item.type === "value" && isMultiSelect && (
                     <div
                       className={cn(
@@ -189,14 +188,24 @@ function FilterTokens<const T extends FilterSchema>({
                       {item.selected && <CheckIcon className="size-3" />}
                     </div>
                   )}
+                  {item.type === "value" && !isMultiSelect && (
+                    <div
+                      className={cn(
+                        "flex size-4 shrink-0 items-center justify-center rounded-full border",
+                        item.selected
+                          ? "border-primary"
+                          : "border-input",
+                      )}
+                    >
+                      {item.selected && (
+                        <div className="size-2 rounded-full bg-primary" />
+                      )}
+                    </div>
+                  )}
                   {item.icon && (
                     <item.icon className="size-4 shrink-0 text-muted-foreground" />
                   )}
                   <span className="flex-1 truncate">{item.label}</span>
-                  {/* Single-select: checkmark on the right */}
-                  {item.type === "value" && !isMultiSelect && item.selected && (
-                    <CheckIcon className="size-4 shrink-0 text-primary" />
-                  )}
                   {item.type === "category" && (
                     <ChevronRightIcon className="size-3.5 text-muted-foreground/50" />
                   )}
@@ -205,39 +214,6 @@ function FilterTokens<const T extends FilterSchema>({
             })}
           </div>
 
-          {isDateEntry && (
-            <DateEntryPanel
-              category={
-                (ft.dropdown.state as { category: string }).category
-              }
-              schema={filters as unknown as FilterSchema}
-              value={value as Record<string, unknown>}
-              onChange={onChange as (v: Record<string, unknown>) => void}
-              onClose={ft.dropdown.close}
-            />
-          )}
-
-          {isValuesMode &&
-            (() => {
-              const cat = (ft.dropdown.state as { category: string })
-                .category;
-              const def = (filters as unknown as FilterSchema)[cat];
-              if (def?.type === "date" && def.presets) {
-                return (
-                  <DateEntryPanel
-                    category={cat}
-                    schema={filters as unknown as FilterSchema}
-                    value={value as Record<string, unknown>}
-                    onChange={
-                      onChange as (v: Record<string, unknown>) => void
-                    }
-                    onClose={ft.dropdown.close}
-                    showBelowPresets
-                  />
-                );
-              }
-              return null;
-            })()}
         </div>
       )}
     </div>
@@ -287,119 +263,5 @@ function FilterToken({
   );
 }
 
-function DateEntryPanel({
-  category,
-  schema,
-  value,
-  onChange,
-  onClose,
-  showBelowPresets,
-}: {
-  category: string;
-  schema: FilterSchema;
-  value: Record<string, unknown>;
-  onChange: (v: Record<string, unknown>) => void;
-  onClose: () => void;
-  showBelowPresets?: boolean;
-}) {
-  const def = schema[category];
-  if (def?.type !== "date") return null;
-
-  const isRange = def.range;
-  const [from, setFrom] = React.useState("");
-  const [to, setTo] = React.useState("");
-  const [single, setSingle] = React.useState("");
-
-  const handleApply = () => {
-    const newValue = { ...value };
-    if (isRange) {
-      if (from && to) {
-        newValue[category] = { from, to };
-        onChange(newValue);
-        onClose();
-      }
-    } else {
-      if (single) {
-        newValue[category] = { date: single };
-        onChange(newValue);
-        onClose();
-      }
-    }
-  };
-
-  const inputClass =
-    "w-full rounded-md border border-input bg-background px-2.5 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-1";
-
-  return (
-    <div
-      data-slot="filter-tokens-date-panel"
-      className={cn("p-2", showBelowPresets && "border-t border-border")}
-    >
-      {!showBelowPresets && (
-        <div className="text-xs font-medium text-muted-foreground mb-2">
-          Select date
-        </div>
-      )}
-      {isRange ? (
-        <div className="flex flex-col gap-2">
-          <div className="grid grid-cols-2 gap-2">
-            <div>
-              <label className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">
-                From
-              </label>
-              <input
-                type={def.time ? "datetime-local" : "date"}
-                data-slot="filter-tokens-date-input"
-                className={inputClass}
-                value={from}
-                onChange={(e) => setFrom(e.target.value)}
-              />
-            </div>
-            <div>
-              <label className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">
-                To
-              </label>
-              <input
-                type={def.time ? "datetime-local" : "date"}
-                data-slot="filter-tokens-date-input"
-                className={inputClass}
-                value={to}
-                onChange={(e) => setTo(e.target.value)}
-              />
-            </div>
-          </div>
-          <button
-            type="button"
-            data-slot="filter-tokens-date-apply"
-            className="w-full rounded-md bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-40"
-            disabled={!from || !to}
-            onClick={handleApply}
-          >
-            Apply range
-          </button>
-        </div>
-      ) : (
-        <div className="flex flex-col gap-2">
-          <input
-            type={def.time ? "datetime-local" : "date"}
-            data-slot="filter-tokens-date-input"
-            className={inputClass}
-            value={single}
-            onChange={(e) => setSingle(e.target.value)}
-          />
-          <button
-            type="button"
-            data-slot="filter-tokens-date-apply"
-            className="w-full rounded-md bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-40"
-            disabled={!single}
-            onClick={handleApply}
-          >
-            Apply
-          </button>
-        </div>
-      )}
-    </div>
-  );
-}
 
 export { FilterTokens };

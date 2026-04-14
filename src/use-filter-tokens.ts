@@ -8,7 +8,8 @@ import type {
   DropdownState,
   Token,
   Option,
-  Preset,
+  DateRangePreset,
+  DateSinglePreset,
   FilterContext,
 } from './types';
 import { resolveOptionsSync, buildTokens } from './utils';
@@ -25,7 +26,7 @@ export function useFilterTokens<const T extends FilterSchema>(
   const [dropdownState, setDropdownState] = useState<DropdownState>({ mode: 'closed' });
   const [highlightedIndex, setHighlightedIndex] = useState(0);
   const [selectedTokenIndex, setSelectedTokenIndex] = useState<number | null>(null);
-  const [asyncOptions, setAsyncOptions] = useState<Record<string, Option[] | Preset[]>>({});
+  const [asyncOptions, setAsyncOptions] = useState<Record<string, Option[]>>({});
   const inputRef = useRef<HTMLInputElement>(null);
 
   const ctx: FilterContext = useMemo(() => ({ filters: values }), [values]);
@@ -69,17 +70,6 @@ export function useFilterTokens<const T extends FilterSchema>(
 
     if (def.type === 'select') {
       const raw = def.options;
-      if (typeof raw === 'function' && !Array.isArray(raw)) {
-        const result = raw(ctx);
-        if (result instanceof Promise) {
-          result.then((resolved) => {
-            setAsyncOptions((prev) => ({ ...prev, [category]: resolved }));
-          });
-          return;
-        }
-      }
-    } else if (def.type === 'date' && def.presets) {
-      const raw = def.presets;
       if (typeof raw === 'function' && !Array.isArray(raw)) {
         const result = raw(ctx);
         if (result instanceof Promise) {
@@ -143,20 +133,16 @@ export function useFilterTokens<const T extends FilterSchema>(
       }
 
       if (def.type === 'date' && def.presets) {
-        let presets = resolveOptionsSync(def.presets, ctx);
-        if (presets.length === 0 && asyncOptions[category]) {
-          presets = asyncOptions[category] as Preset[];
-        }
-        const dateVal = values[category] as { preset?: string } | undefined;
+        const presets = def.presets as readonly (DateRangePreset | DateSinglePreset)[];
         return presets
           .filter((p) => {
             if (!search) return true;
             return p.label.toLowerCase().includes(lowerSearch);
           })
-          .map((p) => ({
-            key: p.value,
+          .map((p, i) => ({
+            key: `preset-${i}`,
             label: p.label,
-            selected: dateVal?.preset === p.value,
+            selected: false,
             type: 'value' as const,
           }));
       }
@@ -217,8 +203,22 @@ export function useFilterTokens<const T extends FilterSchema>(
           return;
         }
         newValue[category] = item.key as never;
-      } else if (def.type === 'date') {
-        newValue[category] = { preset: item.key } as never;
+      } else if (def.type === 'date' && def.presets) {
+        const presetIndex = parseInt(item.key.replace('preset-', ''), 10);
+        const presets = def.presets as readonly (DateRangePreset | DateSinglePreset)[];
+        const preset = presets[presetIndex];
+        if (preset) {
+          if ('from' in preset) {
+            const dateVal: { from: string; to?: string; label?: string } = {
+              from: preset.from().toISOString(),
+              label: preset.label,
+            };
+            if (preset.to) dateVal.to = preset.to().toISOString();
+            newValue[category] = dateVal as never;
+          } else {
+            newValue[category] = { date: preset.date().toISOString(), label: preset.label } as never;
+          }
+        }
       }
 
       onChange(newValue as FilterValues<T>);
@@ -384,6 +384,11 @@ export function useFilterTokens<const T extends FilterSchema>(
     },
     clear: () => {
       onChange({} as FilterValues<T>);
+      closeDropdown();
+    },
+    setDateValue: (category: string, dateValue: { from: string; to: string } | { date: string }) => {
+      const newValue = { ...values, [category]: dateValue as never };
+      onChange(newValue as FilterValues<T>);
       closeDropdown();
     },
   } as FilterTokensReturn<T>;

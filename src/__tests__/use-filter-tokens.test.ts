@@ -23,9 +23,10 @@ const schema = {
   period: {
     type: 'date' as const,
     label: 'Period',
+    range: true,
     presets: [
-      { value: '1h', label: 'Last hour' },
-      { value: '24h', label: '24 hours' },
+      { label: 'Last hour', from: () => new Date(Date.now() - 3600000) },
+      { label: 'Last 24h', from: () => new Date(Date.now() - 86400000) },
     ],
   },
   search: {
@@ -66,10 +67,10 @@ describe('useFilterTokens', () => {
       expect(result.current.tokens[1].displayValue).toBe('Feature');
     });
 
-    it('derives token from date preset', () => {
-      const { result } = setup({ period: { preset: '24h' } });
+    it('derives token from date range value', () => {
+      const { result } = setup({ period: { from: '2026-04-13T00:00:00Z', label: 'Last 24h' } });
       expect(result.current.tokens).toHaveLength(1);
-      expect(result.current.tokens[0].displayValue).toBe('24 hours');
+      expect(result.current.tokens[0].displayValue).toBe('Last 24h');
     });
 
     it('derives token from text value', () => {

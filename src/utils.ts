@@ -3,9 +3,10 @@ import type {
   FilterDef,
   FilterValues,
   Option,
-  Preset,
   OptionsOrFn,
   FilterContext,
+  DateRangePreset,
+  DateSinglePreset,
 } from './types';
 
 export function resolveOptions<T extends { value: string; label: string }>(
@@ -29,7 +30,7 @@ export function resolveOptionsSync<T extends { value: string; label: string }>(
 }
 
 export function findOptionLabel(
-  options: readonly Option[] | readonly Preset[],
+  options: readonly Option[],
   value: string,
 ): string {
   const found = options.find((o) => o.value === value);
@@ -38,6 +39,15 @@ export function findOptionLabel(
 
 export function getFilterLabel(def: FilterDef): string {
   return def.label;
+}
+
+export function formatDateShort(dateStr: string): string {
+  try {
+    const d = new Date(dateStr);
+    return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  } catch {
+    return dateStr;
+  }
 }
 
 export function buildTokens(
@@ -80,13 +90,14 @@ export function buildTokens(
         });
       }
     } else if (def.type === 'date') {
-      const dateVal = val as { preset?: string; date?: string; from?: string; to?: string };
+      const dateVal = val as { date?: string; from?: string; to?: string; label?: string };
       let displayValue = '';
-      if ('preset' in dateVal && dateVal.preset) {
-        const presets = resolveOptionsSync(def.presets, ctx);
-        displayValue = findOptionLabel(presets, dateVal.preset);
-      } else if ('from' in dateVal && 'to' in dateVal) {
-        displayValue = `${formatDateShort(dateVal.from!)} – ${formatDateShort(dateVal.to!)}`;
+      if (dateVal.label) {
+        displayValue = dateVal.label;
+      } else if ('from' in dateVal && dateVal.from) {
+        displayValue = dateVal.to
+          ? `${formatDateShort(dateVal.from)} – ${formatDateShort(dateVal.to)}`
+          : `Since ${formatDateShort(dateVal.from)}`;
       } else if ('date' in dateVal && dateVal.date) {
         displayValue = formatDateShort(dateVal.date);
       }
@@ -133,13 +144,4 @@ export function buildTokens(
   }
 
   return tokens;
-}
-
-function formatDateShort(dateStr: string): string {
-  try {
-    const d = new Date(dateStr);
-    return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-  } catch {
-    return dateStr;
-  }
 }

@@ -33,12 +33,11 @@ const filters = {
     label: 'Period',
     icon: Calendar,
     range: true,
-    time: true,
     presets: [
-      { value: '1h', label: 'Last hour' },
-      { value: '24h', label: '24 hours' },
-      { value: '7d', label: '7 days' },
-      { value: '30d', label: '30 days' },
+      { label: 'Last hour', from: () => new Date(Date.now() - 3600000) },
+      { label: 'Last 24h', from: () => new Date(Date.now() - 86400000) },
+      { label: 'Last 7 days', from: () => new Date(Date.now() - 7 * 86400000) },
+      { label: 'Last 30 days', from: () => new Date(Date.now() - 30 * 86400000) },
     ],
   },
   created: {
@@ -46,9 +45,8 @@ const filters = {
     label: 'Created',
     icon: Clock,
     presets: [
-      { value: 'today', label: 'Today' },
-      { value: 'yesterday', label: 'Yesterday' },
-      { value: 'this-week', label: 'This week' },
+      { label: 'Today', date: () => new Date(new Date().setHours(0, 0, 0, 0)) },
+      { label: 'Yesterday', date: () => new Date(new Date(Date.now() - 86400000).setHours(0, 0, 0, 0)) },
     ],
   },
   search: {

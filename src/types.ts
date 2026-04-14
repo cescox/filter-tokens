@@ -5,11 +5,6 @@ export interface Option {
   readonly label: string;
 }
 
-export interface Preset {
-  readonly value: string;
-  readonly label: string;
-}
-
 export interface FilterContext<T extends FilterSchema = FilterSchema> {
   filters: FilterValues<T>;
 }
@@ -18,6 +13,21 @@ export type OptionsOrFn<T extends { value: string; label: string }> =
   | readonly T[]
   | ((ctx: FilterContext) => T[])
   | ((ctx: FilterContext) => Promise<T[]>);
+
+// ── Date presets ───────────────────────────
+
+export interface DateRangePreset {
+  readonly label: string;
+  readonly from: () => Date;
+  readonly to?: () => Date;
+}
+
+export interface DateSinglePreset {
+  readonly label: string;
+  readonly date: () => Date;
+}
+
+// ── Filter definitions ─────────────────────
 
 export type SelectFilterDef = {
   readonly type: 'select';
@@ -32,8 +42,7 @@ export type DateFilterDef = {
   readonly label: string;
   readonly icon?: ComponentType<{ className?: string }>;
   readonly range?: boolean;
-  readonly time?: boolean;
-  readonly presets?: OptionsOrFn<Preset>;
+  readonly presets?: readonly DateRangePreset[] | readonly DateSinglePreset[];
 };
 
 export type TextFilterDef = {
@@ -68,8 +77,7 @@ type SelectValue<T extends SelectFilterDef> =
     : ExtractValues<T['options']>;
 
 type DateValue<T extends DateFilterDef> =
-  | (T['presets'] extends OptionsOrFn<Preset> ? { preset: ExtractValues<T['presets']> } : never)
-  | (T['range'] extends true ? { from: string; to: string } : { date: string });
+  T['range'] extends true ? { from: string; to?: string; label?: string } : { date: string; label?: string };
 
 type TextValue = string;
 
@@ -145,6 +153,7 @@ export interface FilterTokensReturn<T extends FilterSchema> {
   inputProps: InputProps;
   dropdown: Dropdown;
   clear: () => void;
+  setDateValue: (category: string, value: { from: string; to: string } | { date: string }) => void;
 }
 
 // ── Component props ────────────────────────
