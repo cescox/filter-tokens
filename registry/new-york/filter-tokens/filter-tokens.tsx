@@ -69,7 +69,10 @@ function FilterTokens<const T extends FilterSchema>({
           className,
         )}
         onClick={() => {
-          if (!disabled) ft.inputProps.ref.current?.focus();
+          if (!disabled) {
+            ft.inputProps.ref.current?.focus();
+            ft.open();
+          }
         }}
       >
         {ft.tokens.map((token) => (

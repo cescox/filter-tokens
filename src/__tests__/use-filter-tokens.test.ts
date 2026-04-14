@@ -134,13 +134,14 @@ describe('useFilterTokens', () => {
       expect(result.current.dropdown.items.map((i) => i.key)).toEqual(['success', 'error']);
     });
 
-    it('selects a value and closes for single select', () => {
+    it('selects a value and returns to categories for single select', () => {
       const { result, onChange } = setup();
       act(() => result.current.inputProps.onFocus());
       act(() => result.current.dropdown.select(result.current.dropdown.items[0]));
       act(() => result.current.dropdown.select(result.current.dropdown.items[1]));
       expect(onChange).toHaveBeenCalledWith({ status: 'error' });
-      expect(result.current.dropdown.open).toBe(false);
+      expect(result.current.dropdown.open).toBe(true);
+      expect(result.current.dropdown.state.mode).toBe('categories');
     });
 
     it('stays open for multi-select after selecting', () => {

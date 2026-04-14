@@ -219,7 +219,8 @@ export function useFilterTokens<const T extends FilterSchema>(
       }
 
       onChange(newValue as FilterValues<T>);
-      setDropdownState({ mode: 'closed' });
+      setDropdownState({ mode: 'categories' });
+      setHighlightedIndex(-1);
       setSearch('');
     },
     [dropdownState, schema, values, onChange],
@@ -374,7 +375,7 @@ export function useFilterTokens<const T extends FilterSchema>(
     },
     containerProps: {
       onPointerDown: () => { pointerInsideRef.current = true; },
-      onPointerUp: () => { pointerInsideRef.current = false; },
+      onPointerUp: () => { requestAnimationFrame(() => { pointerInsideRef.current = false; }); },
     },
     dropdown: {
       open: isOpen,
@@ -384,6 +385,12 @@ export function useFilterTokens<const T extends FilterSchema>(
       highlightedIndex,
       setHighlightedIndex,
       state: dropdownState,
+    },
+    open: () => {
+      if (dropdownState.mode === 'closed') {
+        setDropdownState({ mode: 'categories' });
+        setHighlightedIndex(-1);
+      }
     },
     clear: () => {
       onChange({} as FilterValues<T>);

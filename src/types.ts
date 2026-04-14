@@ -158,6 +158,7 @@ export interface FilterTokensReturn<T extends FilterSchema> {
   inputProps: InputProps;
   containerProps: ContainerProps;
   dropdown: Dropdown;
+  open: () => void;
   clear: () => void;
   setDateValue: (category: string, value: { from: string; to?: string } | { date: string }) => void;
 }
