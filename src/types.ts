@@ -121,7 +121,7 @@ export interface InputProps {
   onChange: (e: ChangeEvent<HTMLInputElement>) => void;
   onKeyDown: (e: KeyboardEvent<HTMLInputElement>) => void;
   onFocus: () => void;
-  onBlur: (e: React.FocusEvent) => void;
+  onBlur: () => void;
   placeholder: string;
   role: 'combobox';
   'aria-expanded': boolean;
@@ -136,6 +136,7 @@ export interface Dropdown {
   select: (item: DropdownItem) => void;
   close: () => void;
   highlightedIndex: number;
+  setHighlightedIndex: (index: number) => void;
   state: DropdownState;
 }
 
@@ -148,12 +149,26 @@ export interface FilterTokensReturn<T extends FilterSchema> {
 
 // ── Component props ────────────────────────
 
+export interface FilterTokensClassNames {
+  root?: string;
+  token?: string;
+  tokenLabel?: string;
+  tokenValue?: string;
+  tokenRemove?: string;
+  input?: string;
+  dropdown?: string;
+  dropdownItem?: string;
+  dropdownItemHighlighted?: string;
+  clearButton?: string;
+}
+
 export interface FilterTokensProps<T extends FilterSchema> {
   filters: T;
   value: FilterValues<T>;
   onChange: (value: FilterValues<T>) => void;
   placeholder?: string;
   className?: string;
+  classNames?: FilterTokensClassNames;
   disabled?: boolean;
 }
 

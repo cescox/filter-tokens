@@ -5,18 +5,19 @@ import { cn } from './utils';
 import { X } from './icons';
 
 export function FilterTokens<const T extends FilterSchema>(props: FilterTokensProps<T>) {
-  const { filters, value, onChange, placeholder, className, disabled } = props;
+  const { filters, value, onChange, placeholder, className, classNames, disabled } = props;
   const ft = useFilterTokens({ filters, value, onChange, placeholder });
   const containerRef = React.useRef<HTMLDivElement>(null);
 
   return (
-    <div ref={containerRef} className="relative">
+    <div ref={containerRef} className="relative" data-filter-tokens>
       <div
         className={cn(
           'flex min-h-10 w-full flex-wrap items-center gap-1.5 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background',
           'focus-within:outline-none focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2',
           disabled && 'cursor-not-allowed opacity-50',
           className,
+          classNames?.root,
         )}
         onClick={() => {
           if (!disabled) ft.inputProps.ref.current?.focus();
@@ -25,13 +26,22 @@ export function FilterTokens<const T extends FilterSchema>(props: FilterTokensPr
         {ft.tokens.map((token) => (
           <span
             key={token.id}
-            className="inline-flex items-center gap-1 rounded-md border bg-secondary px-2 py-0.5 text-xs font-medium text-secondary-foreground transition-colors hover:bg-secondary/80"
+            className={cn(
+              'inline-flex items-center gap-1 rounded-md border border-border bg-secondary px-2 py-0.5 text-xs font-medium text-secondary-foreground transition-colors',
+              'hover:bg-secondary/80',
+              classNames?.token,
+            )}
           >
-            <span className="text-muted-foreground">{token.label}:</span>
-            <span>{token.displayValue}</span>
+            <span className={cn('text-muted-foreground', classNames?.tokenLabel)}>
+              {token.label}:
+            </span>
+            <span className={classNames?.tokenValue}>{token.displayValue}</span>
             <button
               type="button"
-              className="ml-0.5 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-1"
+              className={cn(
+                'ml-0.5 inline-flex items-center justify-center rounded-sm opacity-60 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-1',
+                classNames?.tokenRemove,
+              )}
               onClick={(e) => {
                 e.stopPropagation();
                 token.remove();
@@ -47,14 +57,20 @@ export function FilterTokens<const T extends FilterSchema>(props: FilterTokensPr
         <input
           {...ft.inputProps}
           ref={ft.inputProps.ref}
-          className="flex-1 bg-transparent outline-none placeholder:text-muted-foreground min-w-[80px] disabled:cursor-not-allowed"
+          className={cn(
+            'flex-1 bg-transparent outline-none placeholder:text-muted-foreground min-w-[80px] disabled:cursor-not-allowed',
+            classNames?.input,
+          )}
           disabled={disabled}
         />
 
         {ft.tokens.length > 0 && (
           <button
             type="button"
-            className="ml-auto shrink-0 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-1"
+            className={cn(
+              'ml-auto shrink-0 inline-flex items-center justify-center rounded-sm opacity-60 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-1',
+              classNames?.clearButton,
+            )}
             onClick={(e) => {
               e.stopPropagation();
               ft.clear();
@@ -70,7 +86,10 @@ export function FilterTokens<const T extends FilterSchema>(props: FilterTokensPr
       {ft.dropdown.open && (
         <div
           data-filter-tokens-dropdown
-          className="absolute left-0 right-0 top-full z-50 mt-1 max-h-[300px] overflow-y-auto rounded-md border bg-popover p-1 text-popover-foreground shadow-md"
+          className={cn(
+            'absolute left-0 right-0 top-full z-50 mt-1 max-h-[300px] overflow-y-auto rounded-md border border-border bg-popover p-1 text-popover-foreground shadow-md',
+            classNames?.dropdown,
+          )}
           onMouseDown={(e) => e.preventDefault()}
         >
           <div role="listbox" id="filter-tokens-listbox">
@@ -88,27 +107,34 @@ export function FilterTokens<const T extends FilterSchema>(props: FilterTokensPr
                 </div>
               )}
 
-            {ft.dropdown.items.map((item, index) => (
-              <div
-                key={item.key}
-                id={`filter-tokens-item-${item.key}`}
-                role="option"
-                aria-selected={index === ft.dropdown.highlightedIndex}
-                className={cn(
-                  'relative flex cursor-pointer select-none items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-none transition-colors',
-                  index === ft.dropdown.highlightedIndex && 'bg-accent text-accent-foreground',
-                  item.selected && 'font-medium',
-                )}
-                onMouseDown={(e) => {
-                  e.preventDefault();
-                  ft.dropdown.select(item);
-                }}
-              >
-                {item.icon && <item.icon className="size-4 text-muted-foreground" />}
-                <span className="flex-1">{item.label}</span>
-                {item.selected && <Check className="size-4 text-muted-foreground" />}
-              </div>
-            ))}
+            {ft.dropdown.items.map((item, index) => {
+              const isHighlighted = index === ft.dropdown.highlightedIndex;
+              return (
+                <div
+                  key={item.key}
+                  id={`filter-tokens-item-${item.key}`}
+                  role="option"
+                  aria-selected={isHighlighted}
+                  className={cn(
+                    'relative flex cursor-pointer select-none items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-none transition-colors',
+                    'hover:bg-accent hover:text-accent-foreground',
+                    isHighlighted && 'bg-accent text-accent-foreground',
+                    item.selected && 'font-medium',
+                    classNames?.dropdownItem,
+                    isHighlighted && classNames?.dropdownItemHighlighted,
+                  )}
+                  onMouseEnter={() => ft.dropdown.setHighlightedIndex(index)}
+                  onMouseDown={(e) => {
+                    e.preventDefault();
+                    ft.dropdown.select(item);
+                  }}
+                >
+                  {item.icon && <item.icon className="size-4 shrink-0 text-muted-foreground" />}
+                  <span className="flex-1 truncate">{item.label}</span>
+                  {item.selected && <Check className="size-4 shrink-0 text-muted-foreground" />}
+                </div>
+              );
+            })}
 
             {ft.dropdown.state.mode === 'date-entry' && (
               <DateEntryPanel
@@ -185,7 +211,7 @@ function DateEntryPanel({
   };
 
   return (
-    <div className={cn('px-2 py-1.5', showBelowPresets && 'border-t mt-1 pt-2')}>
+    <div className={cn('px-2 py-1.5', showBelowPresets && 'border-t border-border mt-1 pt-2')}>
       <div className="text-xs font-medium text-muted-foreground mb-2">
         {showBelowPresets ? 'Custom range' : 'Select date'}
       </div>
@@ -207,7 +233,7 @@ function DateEntryPanel({
           />
           <button
             type="button"
-            className="w-full rounded-md bg-primary px-2 py-1 text-sm text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+            className="w-full rounded-md bg-primary px-2 py-1 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
             disabled={!from || !to}
             onClick={handleApply}
           >
@@ -224,7 +250,7 @@ function DateEntryPanel({
           />
           <button
             type="button"
-            className="w-full rounded-md bg-primary px-2 py-1 text-sm text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+            className="w-full rounded-md bg-primary px-2 py-1 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
             disabled={!single}
             onClick={handleApply}
           >

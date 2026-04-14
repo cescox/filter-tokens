@@ -333,12 +333,14 @@ export function useFilterTokens<const T extends FilterSchema>(
   }, [dropdownState.mode]);
 
   const handleBlur = useCallback(
-    (e: React.FocusEvent) => {
-      const relatedTarget = e.relatedTarget as HTMLElement | null;
-      if (relatedTarget?.closest('[data-filter-tokens-dropdown]')) {
-        return;
-      }
-      closeDropdown();
+    () => {
+      requestAnimationFrame(() => {
+        const active = document.activeElement;
+        if (active && inputRef.current?.closest('[data-filter-tokens]')?.contains(active)) {
+          return;
+        }
+        closeDropdown();
+      });
     },
     [closeDropdown],
   );
@@ -377,6 +379,7 @@ export function useFilterTokens<const T extends FilterSchema>(
       select: selectItem,
       close: closeDropdown,
       highlightedIndex,
+      setHighlightedIndex,
       state: dropdownState,
     },
     clear: () => {
