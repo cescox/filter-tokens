@@ -1,7 +1,10 @@
 import * as React from 'react';
-import type { FilterSchema, FilterTokensProps } from './types';
-import { useFilterTokens } from './use-filter-tokens';
-import { cn } from './utils';
+import {
+  useFilterTokens,
+  type FilterSchema,
+  type FilterTokensProps,
+} from 'filter-tokens';
+import { cn } from '@/lib/utils';
 import { X } from './icons';
 
 export function FilterTokens<const T extends FilterSchema>(props: FilterTokensProps<T>) {

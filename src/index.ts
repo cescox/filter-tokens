@@ -1,5 +1,4 @@
 export { useFilterTokens } from './use-filter-tokens';
-export { FilterTokens } from './filter-tokens';
 export type {
   FilterSchema,
   FilterDef,
@@ -14,6 +13,8 @@ export type {
   Token,
   DropdownItem,
   DropdownState,
+  Dropdown,
+  InputProps,
   Option,
   Preset,
   OptionsOrFn,

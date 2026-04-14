@@ -17,9 +17,10 @@
     "rootDir": ".",
     "baseUrl": ".",
     "paths": {
-      "filter-tokens": ["./src/index.ts"]
+      "filter-tokens": ["./src/index.ts"],
+      "@/lib/utils": ["./playground/src/lib/utils.ts"]
     }
   },
-  "include": ["src", "playground"],
+  "include": ["src", "playground", "registry"],
   "exclude": ["node_modules", "dist"]
 }

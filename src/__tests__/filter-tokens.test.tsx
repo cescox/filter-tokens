@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, it, expect, vi } from 'vitest';
-import { FilterTokens } from '../filter-tokens';
+import { FilterTokens } from '../../registry/new-york/filter-tokens/filter-tokens';
 
 const filters = {
   status: {

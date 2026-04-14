@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { FilterTokens, type FilterValues } from 'filter-tokens';
+import type { FilterValues } from 'filter-tokens';
+import { FilterTokens } from '../../registry/new-york/filter-tokens/filter-tokens';
 import { CircleDot, Calendar, Search, Tags, Clock } from 'lucide-react';
 
 const filters = {

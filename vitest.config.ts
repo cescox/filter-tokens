@@ -1,8 +1,15 @@
 import { defineConfig } from 'vitest/config';
 import react from '@vitejs/plugin-react';
+import { resolve } from 'path';
 
 export default defineConfig({
   plugins: [react()],
+  resolve: {
+    alias: {
+      'filter-tokens': resolve(__dirname, 'src'),
+      '@/lib/utils': resolve(__dirname, 'playground/src/lib/utils.ts'),
+    },
+  },
   test: {
     environment: 'jsdom',
     globals: true,

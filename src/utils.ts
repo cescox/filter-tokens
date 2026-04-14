@@ -1,5 +1,3 @@
-import { clsx, type ClassValue } from 'clsx';
-import { twMerge } from 'tailwind-merge';
 import type {
   FilterSchema,
   FilterDef,
@@ -9,10 +7,6 @@ import type {
   OptionsOrFn,
   FilterContext,
 } from './types';
-
-export function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs));
-}
 
 export function resolveOptions<T extends { value: string; label: string }>(
   optionsOrFn: OptionsOrFn<T> | undefined,

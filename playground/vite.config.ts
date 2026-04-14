@@ -12,6 +12,7 @@ export default defineConfig({
   resolve: {
     alias: {
       'filter-tokens': resolve(__dirname, '../src'),
+      '@/lib/utils': resolve(__dirname, 'src/lib/utils.ts'),
     },
   },
 });

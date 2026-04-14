@@ -1,0 +1,25 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry.json",
+  "name": "filter-tokens",
+  "homepage": "https://github.com/francesco-carrella/filter-tokens",
+  "items": [
+    {
+      "name": "filter-tokens",
+      "type": "registry:component",
+      "title": "Filter Tokens",
+      "description": "A tokenized filter input component. Renders the useFilterTokens() hook with shadcn-styled tokens and dropdown.",
+      "dependencies": ["filter-tokens", "lucide-react"],
+      "registryDependencies": [],
+      "files": [
+        {
+          "path": "registry/new-york/filter-tokens/filter-tokens.tsx",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/new-york/filter-tokens/icons.tsx",
+          "type": "registry:component"
+        }
+      ]
+    }
+  ]
+}
