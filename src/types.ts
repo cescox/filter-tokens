@@ -149,26 +149,12 @@ export interface FilterTokensReturn<T extends FilterSchema> {
 
 // ── Component props ────────────────────────
 
-export interface FilterTokensClassNames {
-  root?: string;
-  token?: string;
-  tokenLabel?: string;
-  tokenValue?: string;
-  tokenRemove?: string;
-  input?: string;
-  dropdown?: string;
-  dropdownItem?: string;
-  dropdownItemHighlighted?: string;
-  clearButton?: string;
-}
-
 export interface FilterTokensProps<T extends FilterSchema> {
   filters: T;
   value: FilterValues<T>;
   onChange: (value: FilterValues<T>) => void;
   placeholder?: string;
   className?: string;
-  classNames?: FilterTokensClassNames;
   disabled?: boolean;
 }
 

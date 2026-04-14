@@ -5,19 +5,20 @@ import { cn } from './utils';
 import { X } from './icons';
 
 export function FilterTokens<const T extends FilterSchema>(props: FilterTokensProps<T>) {
-  const { filters, value, onChange, placeholder, className, classNames, disabled } = props;
+  const { filters, value, onChange, placeholder, className, disabled } = props;
   const ft = useFilterTokens({ filters, value, onChange, placeholder });
-  const containerRef = React.useRef<HTMLDivElement>(null);
 
   return (
-    <div ref={containerRef} className="relative" data-filter-tokens>
+    <div data-slot="filter-tokens" data-filter-tokens className="relative">
       <div
+        data-slot="filter-tokens-input-wrapper"
+        data-disabled={disabled || undefined}
+        data-has-tokens={ft.tokens.length > 0 || undefined}
         className={cn(
           'flex min-h-10 w-full flex-wrap items-center gap-1.5 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background',
           'focus-within:outline-none focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2',
           disabled && 'cursor-not-allowed opacity-50',
           className,
-          classNames?.root,
         )}
         onClick={() => {
           if (!disabled) ft.inputProps.ref.current?.focus();
@@ -26,22 +27,18 @@ export function FilterTokens<const T extends FilterSchema>(props: FilterTokensPr
         {ft.tokens.map((token) => (
           <span
             key={token.id}
-            className={cn(
-              'inline-flex items-center gap-1 rounded-md border border-border bg-secondary px-2 py-0.5 text-xs font-medium text-secondary-foreground transition-colors',
-              'hover:bg-secondary/80',
-              classNames?.token,
-            )}
+            data-slot="filter-tokens-token"
+            data-category={token.category}
+            className="inline-flex items-center gap-1 rounded-md border border-border bg-secondary px-2 py-0.5 text-xs font-medium text-secondary-foreground transition-colors hover:bg-secondary/80"
           >
-            <span className={cn('text-muted-foreground', classNames?.tokenLabel)}>
+            <span data-slot="filter-tokens-token-label" className="text-muted-foreground">
               {token.label}:
             </span>
-            <span className={classNames?.tokenValue}>{token.displayValue}</span>
+            <span data-slot="filter-tokens-token-value">{token.displayValue}</span>
             <button
               type="button"
-              className={cn(
-                'ml-0.5 inline-flex items-center justify-center rounded-sm opacity-60 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-1',
-                classNames?.tokenRemove,
-              )}
+              data-slot="filter-tokens-token-remove"
+              className="ml-0.5 inline-flex items-center justify-center rounded-sm opacity-60 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-1"
               onClick={(e) => {
                 e.stopPropagation();
                 token.remove();
@@ -57,20 +54,16 @@ export function FilterTokens<const T extends FilterSchema>(props: FilterTokensPr
         <input
           {...ft.inputProps}
           ref={ft.inputProps.ref}
-          className={cn(
-            'flex-1 bg-transparent outline-none placeholder:text-muted-foreground min-w-[80px] disabled:cursor-not-allowed',
-            classNames?.input,
-          )}
+          data-slot="filter-tokens-input"
+          className="flex-1 bg-transparent outline-none placeholder:text-muted-foreground min-w-[80px] disabled:cursor-not-allowed"
           disabled={disabled}
         />
 
         {ft.tokens.length > 0 && (
           <button
             type="button"
-            className={cn(
-              'ml-auto shrink-0 inline-flex items-center justify-center rounded-sm opacity-60 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-1',
-              classNames?.clearButton,
-            )}
+            data-slot="filter-tokens-clear"
+            className="ml-auto shrink-0 inline-flex items-center justify-center rounded-sm opacity-60 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-1"
             onClick={(e) => {
               e.stopPropagation();
               ft.clear();
@@ -85,16 +78,15 @@ export function FilterTokens<const T extends FilterSchema>(props: FilterTokensPr
 
       {ft.dropdown.open && (
         <div
+          data-slot="filter-tokens-dropdown"
           data-filter-tokens-dropdown
-          className={cn(
-            'absolute left-0 right-0 top-full z-50 mt-1 max-h-[300px] overflow-y-auto rounded-md border border-border bg-popover p-1 text-popover-foreground shadow-md',
-            classNames?.dropdown,
-          )}
+          data-state={ft.dropdown.state.mode}
+          className="absolute left-0 right-0 top-full z-50 mt-1 max-h-[300px] overflow-y-auto rounded-md border border-border bg-popover p-1 text-popover-foreground shadow-md"
           onMouseDown={(e) => e.preventDefault()}
         >
           <div role="listbox" id="filter-tokens-listbox">
             {ft.dropdown.state.mode === 'text-entry' && (
-              <div className="px-2 py-1.5 text-xs text-muted-foreground">
+              <div data-slot="filter-tokens-hint" className="px-2 py-1.5 text-xs text-muted-foreground">
                 Type and press Enter
               </div>
             )}
@@ -102,7 +94,7 @@ export function FilterTokens<const T extends FilterSchema>(props: FilterTokensPr
             {ft.dropdown.items.length === 0 &&
               ft.dropdown.state.mode !== 'text-entry' &&
               ft.dropdown.state.mode !== 'date-entry' && (
-                <div className="px-2 py-1.5 text-sm text-muted-foreground">
+                <div data-slot="filter-tokens-empty" className="px-2 py-1.5 text-sm text-muted-foreground">
                   No results
                 </div>
               )}
@@ -115,13 +107,15 @@ export function FilterTokens<const T extends FilterSchema>(props: FilterTokensPr
                   id={`filter-tokens-item-${item.key}`}
                   role="option"
                   aria-selected={isHighlighted}
+                  data-slot="filter-tokens-dropdown-item"
+                  data-type={item.type}
+                  data-highlighted={isHighlighted || undefined}
+                  data-selected={item.selected || undefined}
                   className={cn(
                     'relative flex cursor-pointer select-none items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-none transition-colors',
                     'hover:bg-accent hover:text-accent-foreground',
-                    isHighlighted && 'bg-accent text-accent-foreground',
-                    item.selected && 'font-medium',
-                    classNames?.dropdownItem,
-                    isHighlighted && classNames?.dropdownItemHighlighted,
+                    'data-[highlighted]:bg-accent data-[highlighted]:text-accent-foreground',
+                    'data-[selected]:font-medium',
                   )}
                   onMouseEnter={() => ft.dropdown.setHighlightedIndex(index)}
                   onMouseDown={(e) => {
@@ -211,7 +205,7 @@ function DateEntryPanel({
   };
 
   return (
-    <div className={cn('px-2 py-1.5', showBelowPresets && 'border-t border-border mt-1 pt-2')}>
+    <div data-slot="filter-tokens-date-panel" className={cn('px-2 py-1.5', showBelowPresets && 'border-t border-border mt-1 pt-2')}>
       <div className="text-xs font-medium text-muted-foreground mb-2">
         {showBelowPresets ? 'Custom range' : 'Select date'}
       </div>
@@ -219,6 +213,7 @@ function DateEntryPanel({
         <div className="flex flex-col gap-2">
           <input
             type={def.time ? 'datetime-local' : 'date'}
+            data-slot="filter-tokens-date-input"
             className="w-full rounded-md border border-input bg-background px-2 py-1 text-sm"
             value={from}
             onChange={(e) => setFrom(e.target.value)}
@@ -226,6 +221,7 @@ function DateEntryPanel({
           />
           <input
             type={def.time ? 'datetime-local' : 'date'}
+            data-slot="filter-tokens-date-input"
             className="w-full rounded-md border border-input bg-background px-2 py-1 text-sm"
             value={to}
             onChange={(e) => setTo(e.target.value)}
@@ -233,6 +229,7 @@ function DateEntryPanel({
           />
           <button
             type="button"
+            data-slot="filter-tokens-date-apply"
             className="w-full rounded-md bg-primary px-2 py-1 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
             disabled={!from || !to}
             onClick={handleApply}
@@ -244,12 +241,14 @@ function DateEntryPanel({
         <div className="flex flex-col gap-2">
           <input
             type={def.time ? 'datetime-local' : 'date'}
+            data-slot="filter-tokens-date-input"
             className="w-full rounded-md border border-input bg-background px-2 py-1 text-sm"
             value={single}
             onChange={(e) => setSingle(e.target.value)}
           />
           <button
             type="button"
+            data-slot="filter-tokens-date-apply"
             className="w-full rounded-md bg-primary px-2 py-1 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
             disabled={!single}
             onClick={handleApply}

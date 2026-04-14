@@ -9,7 +9,6 @@ export type {
   NumberFilterDef,
   FilterValues,
   FilterTokensProps,
-  FilterTokensClassNames,
   FilterTokensReturn,
   UseFilterTokensOptions,
   Token,

@@ -21,6 +21,7 @@ export default defineConfig({
         'react/jsx-runtime',
         'clsx',
         'tailwind-merge',
+        'class-variance-authority',
       ],
     },
   },
