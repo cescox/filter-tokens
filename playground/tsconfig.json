@@ -1,0 +1,10 @@
+{
+  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    "rootDir": ".",
+    "paths": {
+      "filter-tokens": ["../src/index.ts"]
+    }
+  },
+  "include": ["src"]
+}
