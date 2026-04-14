@@ -27,9 +27,12 @@ function FilterTokens<const T extends FilterSchema>({
     isValuesMode || isDateEntry || isTextEntry
       ? (ft.dropdown.state as { category: string }).category
       : null;
-  const activeCategoryLabel = activeCategory
-    ? (filters as unknown as FilterSchema)[activeCategory]?.label
+  const activeCategoryDef = activeCategory
+    ? (filters as unknown as FilterSchema)[activeCategory]
     : null;
+  const activeCategoryLabel = activeCategoryDef?.label ?? null;
+  const isMultiSelect =
+    activeCategoryDef?.type === "select" && activeCategoryDef.multi === true;
 
   const goBackToCategories = React.useCallback(() => {
     ft.dropdown.close();
@@ -173,7 +176,8 @@ function FilterTokens<const T extends FilterSchema>({
                     ft.dropdown.select(item);
                   }}
                 >
-                  {item.type === "value" && (
+                  {/* Multi-select: checkbox on the left */}
+                  {item.type === "value" && isMultiSelect && (
                     <div
                       className={cn(
                         "flex size-4 shrink-0 items-center justify-center rounded-sm border",
@@ -189,6 +193,10 @@ function FilterTokens<const T extends FilterSchema>({
                     <item.icon className="size-4 shrink-0 text-muted-foreground" />
                   )}
                   <span className="flex-1 truncate">{item.label}</span>
+                  {/* Single-select: checkmark on the right */}
+                  {item.type === "value" && !isMultiSelect && item.selected && (
+                    <CheckIcon className="size-4 shrink-0 text-primary" />
+                  )}
                   {item.type === "category" && (
                     <ChevronRightIcon className="size-3.5 text-muted-foreground/50" />
                   )}
