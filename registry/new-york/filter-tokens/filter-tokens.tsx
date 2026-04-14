@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { XIcon, CheckIcon, ChevronLeftIcon, ChevronRightIcon } from "lucide-react";
+import { XIcon, CheckIcon, ChevronLeftIcon, ChevronRightIcon, CalendarIcon } from "lucide-react";
 import {
   useFilterTokens,
   type FilterSchema,
@@ -36,10 +36,20 @@ function FilterTokens<const T extends FilterSchema>({
   const isMultiSelect =
     activeCategoryDef?.type === "select" && activeCategoryDef.multi === true;
 
+  const [showCalendar, setShowCalendar] = React.useState(false);
+
+  React.useEffect(() => {
+    if (!ft.dropdown.open) setShowCalendar(false);
+  }, [ft.dropdown.open]);
+
   const goBackToCategories = React.useCallback(() => {
+    if (showCalendar) {
+      setShowCalendar(false);
+      return;
+    }
     ft.dropdown.close();
     setTimeout(() => ft.inputProps.ref.current?.focus(), 0);
-  }, [ft.dropdown, ft.inputProps.ref]);
+  }, [ft.dropdown, ft.inputProps.ref, showCalendar]);
 
   return (
     <div
@@ -126,7 +136,7 @@ function FilterTokens<const T extends FilterSchema>({
             </div>
           )}
 
-          {isTextEntry && (
+          {!showCalendar && isTextEntry && (
             <div
               data-slot="filter-tokens-hint"
               className="px-3 py-2 text-xs text-muted-foreground"
@@ -141,7 +151,7 @@ function FilterTokens<const T extends FilterSchema>({
           <div
             role="listbox"
             id="filter-tokens-listbox"
-            className="overflow-y-auto max-h-[260px] p-1"
+            className={cn("overflow-y-auto max-h-[260px] p-1", showCalendar && "hidden")}
           >
             {ft.dropdown.items.length === 0 && !isTextEntry && !isDateEntry && (
               <div
@@ -216,13 +226,27 @@ function FilterTokens<const T extends FilterSchema>({
             })}
           </div>
 
-          {(isValuesMode || isDateEntry) && activeCategoryDef?.type === "date" && (
+          {!showCalendar && (isValuesMode || isDateEntry) && activeCategoryDef?.type === "date" && (
+            <div className="border-t border-border p-1">
+              <div
+                className="flex cursor-pointer select-none items-center gap-2 rounded-md px-2 py-1.5 text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
+                onMouseDown={(e) => {
+                  e.preventDefault();
+                  setShowCalendar(true);
+                }}
+              >
+                <CalendarIcon className="size-4" />
+                <span>Custom{activeCategoryDef.range ? " range" : ""}...</span>
+              </div>
+            </div>
+          )}
+
+          {showCalendar && activeCategoryDef?.type === "date" && (
             <DateCalendarPanel
-              category={activeCategory!}
               isRange={activeCategoryDef.range === true}
-              hasPresets={(ft.dropdown.items.length ?? 0) > 0}
               onSelect={(dateValue) => {
                 ft.setDateValue(activeCategory!, dateValue);
+                setShowCalendar(false);
               }}
             />
           )}
@@ -277,14 +301,10 @@ function FilterToken({
 
 
 function DateCalendarPanel({
-  category,
   isRange,
-  hasPresets,
   onSelect,
 }: {
-  category: string;
   isRange: boolean;
-  hasPresets: boolean;
   onSelect: (value: { from: string; to?: string } | { date: string }) => void;
 }) {
   const [range, setRange] = React.useState<DateRange | undefined>();
@@ -292,24 +312,16 @@ function DateCalendarPanel({
 
   if (isRange) {
     return (
-      <div
-        data-slot="filter-tokens-calendar"
-        className={cn("p-2", hasPresets && "border-t border-border")}
-      >
-        {hasPresets && (
-          <div className="text-xs font-medium text-muted-foreground mb-1">
-            Or pick a range
-          </div>
-        )}
+      <div data-slot="filter-tokens-calendar" className="p-2 border-t border-border">
         <Calendar
           mode="range"
           selected={range}
           onSelect={(newRange) => {
             setRange(newRange);
-            if (newRange?.from) {
+            if (newRange?.from && newRange?.to) {
               onSelect({
                 from: newRange.from.toISOString(),
-                ...(newRange.to ? { to: newRange.to.toISOString() } : {}),
+                to: newRange.to.toISOString(),
               });
             }
           }}
@@ -320,15 +332,7 @@ function DateCalendarPanel({
   }
 
   return (
-    <div
-      data-slot="filter-tokens-calendar"
-      className={cn("p-2", hasPresets && "border-t border-border")}
-    >
-      {hasPresets && (
-        <div className="text-xs font-medium text-muted-foreground mb-1">
-          Or pick a date
-        </div>
-      )}
+    <div data-slot="filter-tokens-calendar" className="p-2 border-t border-border">
       <Calendar
         mode="single"
         selected={single}
