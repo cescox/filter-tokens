@@ -9,7 +9,7 @@
       "title": "Filter Tokens",
       "description": "A tokenized filter input component. Renders the useFilterTokens() hook with shadcn-styled tokens and dropdown.",
       "dependencies": ["filter-tokens", "lucide-react"],
-      "registryDependencies": [],
+      "registryDependencies": ["calendar"],
       "files": [
         {
           "path": "registry/new-york/filter-tokens/filter-tokens.tsx",

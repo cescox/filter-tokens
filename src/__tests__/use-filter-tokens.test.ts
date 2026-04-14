@@ -68,9 +68,9 @@ describe('useFilterTokens', () => {
     });
 
     it('derives token from date range value', () => {
-      const { result } = setup({ period: { from: '2026-04-13T00:00:00Z', label: 'Last 24h' } });
+      const { result } = setup({ period: { from: '2026-04-13T00:00:00Z' } });
       expect(result.current.tokens).toHaveLength(1);
-      expect(result.current.tokens[0].displayValue).toBe('Last 24h');
+      expect(result.current.tokens[0].displayValue).toContain('Apr');
     });
 
     it('derives token from text value', () => {

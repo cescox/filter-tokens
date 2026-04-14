@@ -18,7 +18,8 @@
     "baseUrl": ".",
     "paths": {
       "filter-tokens": ["./src/index.ts"],
-      "@/lib/utils": ["./playground/src/lib/utils.ts"]
+      "@/lib/utils": ["./playground/src/lib/utils.ts"],
+      "@/components/*": ["./playground/src/components/*"]
     }
   },
   "include": ["src", "playground", "registry"],

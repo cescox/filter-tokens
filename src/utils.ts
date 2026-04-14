@@ -5,8 +5,6 @@ import type {
   Option,
   OptionsOrFn,
   FilterContext,
-  DateRangePreset,
-  DateSinglePreset,
 } from './types';
 
 export function resolveOptions<T extends { value: string; label: string }>(
@@ -90,11 +88,10 @@ export function buildTokens(
         });
       }
     } else if (def.type === 'date') {
-      const dateVal = val as { date?: string; from?: string; to?: string; label?: string };
+      const dateVal = val as { date?: string; from?: string; to?: string };
       let displayValue = '';
-      if (dateVal.label) {
-        displayValue = dateVal.label;
-      } else if ('from' in dateVal && dateVal.from) {
+
+      if ('from' in dateVal && dateVal.from) {
         displayValue = dateVal.to
           ? `${formatDateShort(dateVal.from)} – ${formatDateShort(dateVal.to)}`
           : `Since ${formatDateShort(dateVal.from)}`;

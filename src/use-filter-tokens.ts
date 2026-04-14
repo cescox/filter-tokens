@@ -209,14 +209,11 @@ export function useFilterTokens<const T extends FilterSchema>(
         const preset = presets[presetIndex];
         if (preset) {
           if ('from' in preset) {
-            const dateVal: { from: string; to?: string; label?: string } = {
-              from: preset.from().toISOString(),
-              label: preset.label,
-            };
+            const dateVal: { from: string; to?: string } = { from: preset.from().toISOString() };
             if (preset.to) dateVal.to = preset.to().toISOString();
             newValue[category] = dateVal as never;
           } else {
-            newValue[category] = { date: preset.date().toISOString(), label: preset.label } as never;
+            newValue[category] = { date: preset.date().toISOString() } as never;
           }
         }
       }

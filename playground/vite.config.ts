@@ -13,6 +13,7 @@ export default defineConfig({
     alias: {
       'filter-tokens': resolve(__dirname, '../src'),
       '@/lib/utils': resolve(__dirname, 'src/lib/utils.ts'),
+      '@/components': resolve(__dirname, 'src/components'),
     },
   },
 });

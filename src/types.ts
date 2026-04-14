@@ -77,7 +77,7 @@ type SelectValue<T extends SelectFilterDef> =
     : ExtractValues<T['options']>;
 
 type DateValue<T extends DateFilterDef> =
-  T['range'] extends true ? { from: string; to?: string; label?: string } : { date: string; label?: string };
+  T['range'] extends true ? { from: string; to?: string } : { date: string };
 
 type TextValue = string;
 
@@ -153,7 +153,7 @@ export interface FilterTokensReturn<T extends FilterSchema> {
   inputProps: InputProps;
   dropdown: Dropdown;
   clear: () => void;
-  setDateValue: (category: string, value: { from: string; to: string } | { date: string }) => void;
+  setDateValue: (category: string, value: { from: string; to?: string } | { date: string }) => void;
 }
 
 // ── Component props ────────────────────────

@@ -7,7 +7,9 @@ import {
   type FilterSchema,
   type FilterTokensProps,
 } from "filter-tokens";
+import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
+import type { DateRange } from "react-day-picker";
 
 function FilterTokens<const T extends FilterSchema>({
   filters,
@@ -214,6 +216,16 @@ function FilterTokens<const T extends FilterSchema>({
             })}
           </div>
 
+          {(isValuesMode || isDateEntry) && activeCategoryDef?.type === "date" && (
+            <DateCalendarPanel
+              category={activeCategory!}
+              isRange={activeCategoryDef.range === true}
+              hasPresets={(ft.dropdown.items.length ?? 0) > 0}
+              onSelect={(dateValue) => {
+                ft.setDateValue(activeCategory!, dateValue);
+              }}
+            />
+          )}
         </div>
       )}
     </div>
@@ -263,5 +275,72 @@ function FilterToken({
   );
 }
 
+
+function DateCalendarPanel({
+  category,
+  isRange,
+  hasPresets,
+  onSelect,
+}: {
+  category: string;
+  isRange: boolean;
+  hasPresets: boolean;
+  onSelect: (value: { from: string; to?: string } | { date: string }) => void;
+}) {
+  const [range, setRange] = React.useState<DateRange | undefined>();
+  const [single, setSingle] = React.useState<Date | undefined>();
+
+  if (isRange) {
+    return (
+      <div
+        data-slot="filter-tokens-calendar"
+        className={cn("p-2", hasPresets && "border-t border-border")}
+      >
+        {hasPresets && (
+          <div className="text-xs font-medium text-muted-foreground mb-1">
+            Or pick a range
+          </div>
+        )}
+        <Calendar
+          mode="range"
+          selected={range}
+          onSelect={(newRange) => {
+            setRange(newRange);
+            if (newRange?.from) {
+              onSelect({
+                from: newRange.from.toISOString(),
+                ...(newRange.to ? { to: newRange.to.toISOString() } : {}),
+              });
+            }
+          }}
+          numberOfMonths={1}
+        />
+      </div>
+    );
+  }
+
+  return (
+    <div
+      data-slot="filter-tokens-calendar"
+      className={cn("p-2", hasPresets && "border-t border-border")}
+    >
+      {hasPresets && (
+        <div className="text-xs font-medium text-muted-foreground mb-1">
+          Or pick a date
+        </div>
+      )}
+      <Calendar
+        mode="single"
+        selected={single}
+        onSelect={(day) => {
+          setSingle(day);
+          if (day) {
+            onSelect({ date: day.toISOString() });
+          }
+        }}
+      />
+    </div>
+  );
+}
 
 export { FilterTokens };
