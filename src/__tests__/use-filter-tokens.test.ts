@@ -199,6 +199,24 @@ describe('useFilterTokens', () => {
       expect(result.current.dropdown.highlightedIndex).toBe(0);
     });
 
+    it('jumps to first item on Home', () => {
+      const { result } = setup();
+      act(() => result.current.inputProps.onFocus());
+      keyDown(result, 'ArrowDown');
+      keyDown(result, 'ArrowDown');
+      expect(result.current.dropdown.highlightedIndex).toBe(1);
+      keyDown(result, 'Home');
+      expect(result.current.dropdown.highlightedIndex).toBe(0);
+    });
+
+    it('jumps to last item on End', () => {
+      const { result } = setup();
+      act(() => result.current.inputProps.onFocus());
+      const lastIndex = result.current.dropdown.items.length - 1;
+      keyDown(result, 'End');
+      expect(result.current.dropdown.highlightedIndex).toBe(lastIndex);
+    });
+
     it('selects highlighted item on Enter', () => {
       const { result } = setup();
       act(() => result.current.inputProps.onFocus());

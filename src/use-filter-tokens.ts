@@ -324,6 +324,16 @@ export function useFilterTokens<const T extends FilterSchema>(
     } else if (e.key === 'ArrowUp') {
       e.preventDefault();
       if (isOpen) setHighlightedIndex((i) => Math.max(i - 1, 0));
+    } else if (e.key === 'Home') {
+      if (isOpen && items.length > 0) {
+        e.preventDefault();
+        setHighlightedIndex(0);
+      }
+    } else if (e.key === 'End') {
+      if (isOpen && items.length > 0) {
+        e.preventDefault();
+        setHighlightedIndex(items.length - 1);
+      }
     } else if (e.key === 'Enter') {
       e.preventDefault();
       if (isOpen && items[highlightedIndex]) selectItem(items[highlightedIndex]);
