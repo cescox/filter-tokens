@@ -21,3 +21,5 @@ Thumbs.db
 .gstack/
 
 *.tgz
+
+.history/

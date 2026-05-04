@@ -166,7 +166,7 @@ function FilterTokens<const T extends FilterSchema>({
             id={popoverContentId}
             data-slot="filter-tokens-dropdown"
             data-state={mode}
-            className="min-w-[var(--anchor-width)] rounded-lg border border-border bg-popover p-0 text-popover-foreground shadow-lg outline-none"
+            className="min-w-(--anchor-width) rounded-lg border border-border bg-popover p-0 text-popover-foreground shadow-lg outline-none"
             initialFocus={false}
             finalFocus={triggerRef}
             onKeyDown={(e) => {

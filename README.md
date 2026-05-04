@@ -232,7 +232,7 @@ The component uses shadcn CSS variables for theming and `data-slot` attributes o
 
 ```tsx
 <FilterTokens
-  className="[&_[data-slot=filter-tokens-token]]:bg-blue-100"
+  className="**:data-[slot=filter-tokens-token]:bg-blue-100"
   filters={filters}
   value={value}
   onChange={setValue}

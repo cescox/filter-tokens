@@ -165,7 +165,7 @@ function FilterTokens<const T extends FilterSchema>({
           data-state={mode}
           align="start"
           sideOffset={4}
-          className="z-50 min-w-[var(--radix-popover-trigger-width)] rounded-lg border border-border bg-popover p-0 text-popover-foreground shadow-lg outline-none"
+          className="z-50 min-w-(--radix-popover-trigger-width) rounded-lg border border-border bg-popover p-0 text-popover-foreground shadow-lg outline-none"
           onOpenAutoFocus={(e) => e.preventDefault()}
           onCloseAutoFocus={(e) => e.preventDefault()}
           onEscapeKeyDown={(e) => {
