@@ -1,3 +1,5 @@
+'use client';
+
 import { useState, useRef, useMemo, useEffect } from 'react';
 import type {
   FilterSchema,
