@@ -82,6 +82,13 @@ describe('FilterTokens rendering', () => {
     expect(screen.getByLabelText('Remove Tags: Bug, Feature')).toBeInTheDocument();
   });
 
+  it('keeps a trailing "Filter..." hint visible when tokens exist', () => {
+    render(<Setup initialValue={{ status: 'error' }} />);
+    const placeholder = document.querySelector('[data-slot="filter-tokens-placeholder"]');
+    expect(placeholder).not.toBeNull();
+    expect(placeholder?.textContent).toBe('Filter...');
+  });
+
   it('renders clear all button when tokens exist', () => {
     render(<Setup initialValue={{ status: 'error' }} />);
     expect(screen.getByLabelText('Clear all filters')).toBeInTheDocument();

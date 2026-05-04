@@ -123,11 +123,17 @@ function FilterTokens<const T extends FilterSchema>({
             />
           ))}
 
-          {ft.tokens.length === 0 && (
-            <span className="text-muted-foreground select-none">
-              {placeholder}
-            </span>
-          )}
+          <span
+            data-slot="filter-tokens-placeholder"
+            className={cn(
+              "select-none",
+              ft.tokens.length === 0
+                ? "text-muted-foreground"
+                : "text-muted-foreground/40 text-xs",
+            )}
+          >
+            {ft.tokens.length === 0 ? placeholder : "Filter..."}
+          </span>
 
           {ft.tokens.length > 0 && (
             <div className="ml-auto flex items-center">
