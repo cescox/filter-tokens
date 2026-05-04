@@ -599,6 +599,17 @@ describe('useFilterTokens', () => {
       // Second backspace removes it
       expect(onChange).toHaveBeenCalledWith({ status: 'error' });
     });
+
+    it('clamps selectedTokenIndex when tokens shrink externally', async () => {
+      const { result, rerender } = setup({ status: 'error', search: 'test' });
+      act(() => result.current.inputProps.onFocus());
+      // Select last token (index 1)
+      keyDown(result, 'Backspace');
+      // Parent removes a value out-of-band — tokens.length goes from 2 to 1
+      rerender({ value: { status: 'error' } });
+      // selectedTokenIndex must clamp to valid range; Backspace must not crash
+      expect(() => keyDown(result, 'Backspace')).not.toThrow();
+    });
   });
 
   describe('number filter', () => {

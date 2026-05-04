@@ -184,6 +184,13 @@ export function useFilterTokens<const T extends FilterSchema>(
     [schema, values, ctx, dateLabels, locale],
   );
 
+  // Clamp selectedTokenIndex when tokens shrink (e.g. parent removed a value)
+  useEffect(() => {
+    if (selectedTokenIndex !== null && selectedTokenIndex >= tokens.length) {
+      setSelectedTokenIndex(tokens.length > 0 ? tokens.length - 1 : null);
+    }
+  }, [tokens.length, selectedTokenIndex]);
+
   // ── Dropdown items ─────────────────────────
 
   const items: DropdownItem[] = useMemo(() => {
