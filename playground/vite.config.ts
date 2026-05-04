@@ -8,12 +8,13 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 
 export default defineConfig({
   root: __dirname,
+  publicDir: resolve(__dirname, '../public'),
   plugins: [react(), tailwindcss()],
   resolve: {
-    alias: {
-      'filter-tokens': resolve(__dirname, '../src'),
-      '@/lib/utils': resolve(__dirname, 'src/lib/utils.ts'),
-      '@/components': resolve(__dirname, 'src/components'),
-    },
+    alias: [
+      { find: '@filter-tokens/ui', replacement: resolve(__dirname, '../src') },
+      { find: /^filter-tokens$/, replacement: resolve(__dirname, '../src/index.ts') },
+      { find: /^filter-tokens\/(.*)$/, replacement: resolve(__dirname, '../src/$1') },
+    ],
   },
 });

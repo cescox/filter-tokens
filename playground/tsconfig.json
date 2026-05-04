@@ -3,7 +3,9 @@
   "compilerOptions": {
     "rootDir": ".",
     "paths": {
-      "filter-tokens": ["../src/index.ts"]
+      "filter-tokens": ["../src/index.ts"],
+      "filter-tokens/*": ["../src/*"],
+      "@filter-tokens/ui/*": ["../src/*"]
     }
   },
   "include": ["src"]

@@ -115,12 +115,10 @@ export interface DropdownItem {
   type: 'category' | 'value';
 }
 
-export type DropdownState =
-  | { mode: 'closed' }
-  | { mode: 'categories' }
-  | { mode: 'values'; category: string }
-  | { mode: 'text-entry'; category: string }
-  | { mode: 'date-entry'; category: string };
+export interface DropdownState {
+  mode: 'closed' | 'categories' | 'values' | 'text-entry' | 'date-entry' | 'number-entry';
+  category: string | null;
+}
 
 // ── Hook return ────────────────────────────
 
@@ -141,27 +139,25 @@ export interface InputProps {
 
 export interface Dropdown {
   open: boolean;
+  loading: boolean;
   items: DropdownItem[];
   select: (item: DropdownItem) => void;
   close: () => void;
+  goBack: () => void;
   highlightedIndex: number;
   setHighlightedIndex: (index: number) => void;
   state: DropdownState;
 }
 
-export interface ContainerProps {
-  onPointerDown: () => void;
-  onPointerUp: () => void;
-}
-
 export interface FilterTokensReturn<T extends FilterSchema> {
   tokens: Token[];
   inputProps: InputProps;
-  containerProps: ContainerProps;
   dropdown: Dropdown;
   open: () => void;
+  openCategory: (key: string) => void;
   clear: () => void;
   setDateValue: (category: string, value: { from: string; to?: string } | { date: string }) => void;
+  setNumberValue: (category: string, value: { min?: number; max?: number }) => void;
 }
 
 // ── Component props ────────────────────────
@@ -180,4 +176,5 @@ export interface UseFilterTokensOptions<T extends FilterSchema> {
   value: FilterValues<T>;
   onChange: (value: FilterValues<T>) => void;
   placeholder?: string;
+  locale?: string;
 }

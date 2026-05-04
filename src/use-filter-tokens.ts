@@ -1,97 +1,195 @@
-import { useState, useRef, useCallback, useMemo, useEffect } from 'react';
+import { useState, useRef, useMemo, useEffect } from 'react';
 import type {
   FilterSchema,
   FilterValues,
   UseFilterTokensOptions,
   FilterTokensReturn,
   DropdownItem,
-  DropdownState,
   Token,
   Option,
   DateRangePreset,
   DateSinglePreset,
-  FilterContext,
 } from './types';
 import { resolveOptionsSync, buildTokens } from './utils';
+
+const noop = () => {};
+
+type Mode = 'closed' | 'categories' | 'values' | 'text-entry' | 'date-entry' | 'number-entry';
 
 export function useFilterTokens<const T extends FilterSchema>(
   options: UseFilterTokensOptions<T>,
 ): FilterTokensReturn<T> {
-  const { filters, value, onChange, placeholder = 'Filter...' } = options;
+  const { filters, value, onChange, placeholder = 'Filter...', locale } = options;
 
-  const schema = filters as unknown as FilterSchema;
-  const values = value as unknown as FilterValues<FilterSchema>;
+  // Internal untyped references — the generic boundary is at input/output only
+  const schema = filters as Record<string, FilterSchema[string]>;
+  const values = value as Record<string, unknown>;
+  const emitChange = onChange as (v: Record<string, unknown>) => void;
 
+  // ── State ──────────────────────────────────
+
+  const [mode, setMode] = useState<Mode>('closed');
+  const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [search, setSearch] = useState('');
-  const [dropdownState, setDropdownState] = useState<DropdownState>({ mode: 'closed' });
-  const [highlightedIndex, setHighlightedIndex] = useState(0);
+  const [highlightedIndex, setHighlightedIndex] = useState(-1);
   const [selectedTokenIndex, setSelectedTokenIndex] = useState<number | null>(null);
   const [asyncOptions, setAsyncOptions] = useState<Record<string, Option[]>>({});
+  const [asyncLoading, setAsyncLoading] = useState(false);
+  const [dateLabels, setDateLabels] = useState<Record<string, string>>({});
   const inputRef = useRef<HTMLInputElement>(null);
-  const pointerInsideRef = useRef(false);
 
-  const ctx: FilterContext = useMemo(() => ({ filters: values }), [values]);
+  const isOpen = mode !== 'closed';
+  const ctx = useMemo(() => ({ filters: values as FilterValues<FilterSchema> }), [values]);
 
-  const removeToken = useCallback(
-    (category: string, tokenValue?: string) => {
-      const def = schema[category];
-      const newValue = { ...values };
+  // ── State transitions ──────────────────────
 
-      if (def.type === 'select' && def.multi && Array.isArray(values[category]) && tokenValue) {
-        const remaining = (values[category] as string[]).filter((v) => v !== tokenValue);
-        if (remaining.length === 0) {
-          delete newValue[category];
-        } else {
-          newValue[category] = remaining as never;
-        }
-      } else {
-        delete newValue[category];
-      }
+  function openCategories() {
+    setMode('categories');
+    setActiveCategory(null);
+    setHighlightedIndex(-1);
+    setSearch('');
+  }
 
-      onChange(newValue as FilterValues<T>);
-    },
-    [schema, values, onChange],
-  );
-
-  const tokens: Token[] = useMemo(
-    () => buildTokens(schema, values, ctx, removeToken),
-    [schema, values, ctx, removeToken],
-  );
-
-  // Load async options when entering values mode
-  useEffect(() => {
-    if (dropdownState.mode !== 'values') return;
-    const category = dropdownState.category;
-    const def = schema[category];
+  function selectCategory(key: string) {
+    const def = schema[key];
     if (!def) return;
 
-    let optionsOrFn: typeof def.type extends 'select'
-      ? typeof def
-      : never;
+    if (def.type === 'text') {
+      setMode('text-entry');
+      setActiveCategory(key);
+      setHighlightedIndex(-1);
+      const currentVal = values[key];
+      setSearch(typeof currentVal === 'string' ? currentVal : '');
+      return;
+    }
 
-    if (def.type === 'select') {
-      const raw = def.options;
-      if (typeof raw === 'function' && !Array.isArray(raw)) {
-        const result = raw(ctx);
-        if (result instanceof Promise) {
-          result.then((resolved) => {
-            setAsyncOptions((prev) => ({ ...prev, [category]: resolved }));
-          });
-          return;
-        }
+    if (def.type === 'number') {
+      setMode('number-entry');
+      setActiveCategory(key);
+      setHighlightedIndex(-1);
+      setSearch('');
+      return;
+    }
+
+    if (def.type === 'date' && (!def.presets?.length || (values[key] && !dateLabels[key]))) {
+      setMode('date-entry');
+      setActiveCategory(key);
+      setHighlightedIndex(-1);
+      setSearch('');
+      return;
+    }
+
+    setMode('values');
+    setActiveCategory(key);
+    setHighlightedIndex(0);
+    setSearch('');
+  }
+
+  function goBack() {
+    if (mode === 'date-entry' && activeCategory) {
+      const def = schema[activeCategory];
+      if (def?.type === 'date' && def.presets?.length) {
+        setMode('values');
+        setHighlightedIndex(0);
+        setSearch('');
+        return;
       }
     }
-  }, [dropdownState, schema, ctx]);
+    if (mode === 'values' || mode === 'text-entry' || mode === 'date-entry' || mode === 'number-entry') {
+      openCategories();
+      return;
+    }
+    close();
+  }
 
-  const getDropdownItems = useCallback((): DropdownItem[] => {
+  function close() {
+    setMode('closed');
+    setActiveCategory(null);
+    setSearch('');
+    setHighlightedIndex(-1);
+    setSelectedTokenIndex(null);
+  }
+
+  function afterValueSelected() {
+    openCategories();
+  }
+
+  // ── Async options loading ──────────────────
+
+  useEffect(() => {
+    if (mode !== 'values' || !activeCategory) return;
+    const def = schema[activeCategory];
+    if (def?.type !== 'select') return;
+
+    const raw = def.options;
+    if (typeof raw !== 'function') return;
+
+    const result = raw(ctx);
+    if (!(result instanceof Promise)) return;
+
+    setAsyncLoading(true);
+    let cancelled = false;
+    result.then((resolved) => {
+      if (!cancelled) {
+        setAsyncOptions((prev) => ({ ...prev, [activeCategory]: resolved }));
+        setAsyncLoading(false);
+      }
+    }).catch((error) => {
+      if (!cancelled) {
+        console.error('[filter-tokens] Failed to load options:', error);
+        setAsyncLoading(false);
+      }
+    });
+    return () => { cancelled = true; setAsyncLoading(false); };
+  }, [mode, activeCategory, schema, ctx]);
+
+  // ── Clean up stale dateLabels when values change externally ──
+
+  useEffect(() => {
+    setDateLabels((prev) => {
+      const keys = Object.keys(prev);
+      if (keys.length === 0) return prev;
+      let changed = false;
+      const next: Record<string, string> = {};
+      for (const key of keys) {
+        if (values[key] !== undefined) {
+          next[key] = prev[key];
+        } else {
+          changed = true;
+        }
+      }
+      return changed ? next : prev;
+    });
+  }, [values]);
+
+  // ── Token derivation ───────────────────────
+
+  function removeToken(category: string) {
+    const def = schema[category];
+    const next = { ...values };
+    delete next[category];
+
+    if (def?.type === 'date') {
+      setDateLabels((prev) => { const n = { ...prev }; delete n[category]; return n; });
+    }
+
+    emitChange(next);
+  }
+
+  const tokens: Token[] = useMemo(
+    () => buildTokens(schema, values as FilterValues<FilterSchema>, ctx, removeToken, dateLabels, locale),
+    // eslint-disable-next-line react-hooks/exhaustive-deps — removeToken uses values via closure, but values is already a dep
+    [schema, values, ctx, dateLabels, locale],
+  );
+
+  // ── Dropdown items ─────────────────────────
+
+  const items: DropdownItem[] = useMemo(() => {
     const lowerSearch = search.toLowerCase();
 
-    if (dropdownState.mode === 'categories') {
+    if (mode === 'categories') {
       return Object.entries(schema)
-        .filter(([, def]) => {
-          if (!search) return true;
-          return def.label.toLowerCase().includes(lowerSearch);
-        })
+        .filter(([, def]) => !search || def.label.toLowerCase().includes(lowerSearch))
         .map(([key, def]) => ({
           key,
           label: def.label,
@@ -101,254 +199,171 @@ export function useFilterTokens<const T extends FilterSchema>(
         }));
     }
 
-    if (dropdownState.mode === 'values') {
-      const category = dropdownState.category;
-      const def = schema[category];
+    if (mode === 'values' && activeCategory) {
+      const def = schema[activeCategory];
       if (!def) return [];
 
       if (def.type === 'select') {
         let opts = resolveOptionsSync(def.options, ctx);
-        if (opts.length === 0 && asyncOptions[category]) {
-          opts = asyncOptions[category] as Option[];
+        if (opts.length === 0 && asyncOptions[activeCategory]) {
+          opts = asyncOptions[activeCategory];
         }
         return opts
-          .filter((o) => {
-            if (!search) return true;
-            return o.label.toLowerCase().includes(lowerSearch);
-          })
+          .filter((o) => !search || o.label.toLowerCase().includes(lowerSearch))
           .map((o) => {
-            const currentVal = values[category];
-            let selected = false;
-            if (def.multi && Array.isArray(currentVal)) {
-              selected = (currentVal as string[]).includes(o.value);
-            } else {
-              selected = currentVal === o.value;
-            }
-            return {
-              key: o.value,
-              label: o.label,
-              selected,
-              type: 'value' as const,
-            };
+            const currentVal = values[activeCategory];
+            const selected = def.multi && Array.isArray(currentVal)
+              ? (currentVal as string[]).includes(o.value)
+              : currentVal === o.value;
+            return { key: o.value, label: o.label, selected, type: 'value' as const };
           });
       }
 
       if (def.type === 'date' && def.presets) {
         const presets = def.presets as readonly (DateRangePreset | DateSinglePreset)[];
-        return presets
-          .filter((p) => {
-            if (!search) return true;
-            return p.label.toLowerCase().includes(lowerSearch);
-          })
-          .map((p, i) => ({
-            key: `preset-${i}`,
-            label: p.label,
-            selected: false,
-            type: 'value' as const,
-          }));
+        const customLabel = `Custom${def.range ? ' range' : ''}...`;
+        const items: DropdownItem[] = presets
+          .filter((p) => !search || p.label.toLowerCase().includes(lowerSearch))
+          .map((p, i) => ({ key: `preset-${i}`, label: p.label, selected: false, type: 'value' as const }));
+        if (!search || customLabel.toLowerCase().includes(lowerSearch)) {
+          items.push({ key: '__custom_date__', label: customLabel, selected: false, type: 'value' as const });
+        }
+        return items;
       }
-
-      return [];
     }
 
     return [];
-  }, [dropdownState, schema, values, search, ctx, asyncOptions]);
+  }, [mode, activeCategory, schema, values, search, ctx, asyncOptions]);
 
-  const items = useMemo(() => getDropdownItems(), [getDropdownItems]);
-
+  // Reset highlight when items change
   useEffect(() => {
-    setHighlightedIndex(dropdownState.mode === 'categories' ? -1 : 0);
-  }, [items.length, dropdownState.mode]);
+    if (mode === 'categories') setHighlightedIndex(search ? 0 : -1);
+    else if (mode === 'values') setHighlightedIndex(0);
+  }, [items.length, mode, search]);
 
-  const selectItem = useCallback(
-    (item: DropdownItem) => {
-      if (item.type === 'category') {
-        const def = schema[item.key];
-        if (def.type === 'text') {
-          setDropdownState({ mode: 'text-entry', category: item.key });
-          setSearch('');
-          return;
+  // ── Item selection ─────────────────────────
+
+  function selectItem(item: DropdownItem) {
+    if (item.type === 'category') {
+      selectCategory(item.key);
+      return;
+    }
+
+    if (!activeCategory) return;
+    const def = schema[activeCategory];
+    const next = { ...values };
+
+    if (def.type === 'select') {
+      if (def.multi) {
+        const current = (values[activeCategory] as string[] | undefined) ?? [];
+        if (current.includes(item.key)) {
+          const remaining = current.filter((v) => v !== item.key);
+          if (remaining.length) {
+            next[activeCategory] = remaining;
+          } else {
+            delete next[activeCategory];
+          }
+        } else {
+          next[activeCategory] = [...current, item.key];
         }
-        if (def.type === 'date' && !def.presets) {
-          setDropdownState({ mode: 'date-entry', category: item.key });
-          setSearch('');
-          return;
-        }
-        setDropdownState({ mode: 'values', category: item.key });
+        emitChange(next);
+        return; // stay open for multi
+      }
+      next[activeCategory] = item.key;
+    } else if (def.type === 'date' && def.presets) {
+      if (item.key === '__custom_date__') {
+        setMode('date-entry');
         setSearch('');
         return;
       }
-
-      // item.type === 'value'
-      if (dropdownState.mode !== 'values') return;
-      const category = dropdownState.category;
-      const def = schema[category];
-      const newValue = { ...values };
-
-      if (def.type === 'select') {
-        if (def.multi) {
-          const current = (values[category] as string[] | undefined) || [];
-          if (current.includes(item.key)) {
-            const remaining = current.filter((v) => v !== item.key);
-            if (remaining.length === 0) {
-              delete newValue[category];
-            } else {
-              newValue[category] = remaining as never;
-            }
-          } else {
-            newValue[category] = [...current, item.key] as never;
-          }
-          onChange(newValue as FilterValues<T>);
-          // Keep dropdown open for multi-select
-          return;
-        }
-        newValue[category] = item.key as never;
-      } else if (def.type === 'date' && def.presets) {
-        const presetIndex = parseInt(item.key.replace('preset-', ''), 10);
-        const presets = def.presets as readonly (DateRangePreset | DateSinglePreset)[];
-        const preset = presets[presetIndex];
-        if (preset) {
-          if ('from' in preset) {
-            const dateVal: { from: string; to?: string } = { from: preset.from().toISOString() };
-            if (preset.to) dateVal.to = preset.to().toISOString();
-            newValue[category] = dateVal as never;
-          } else {
-            newValue[category] = { date: preset.date().toISOString() } as never;
-          }
+      const presetIndex = parseInt(item.key.replace('preset-', ''), 10);
+      const presets = def.presets as readonly (DateRangePreset | DateSinglePreset)[];
+      const preset = presets[presetIndex];
+      if (preset) {
+        setDateLabels((prev) => ({ ...prev, [activeCategory]: preset.label }));
+        if ('from' in preset) {
+          const dateVal: Record<string, string> = { from: preset.from().toISOString() };
+          if (preset.to) dateVal.to = preset.to().toISOString();
+          next[activeCategory] = dateVal;
+        } else {
+          next[activeCategory] = { date: preset.date().toISOString() };
         }
       }
+    }
 
-      onChange(newValue as FilterValues<T>);
-      setDropdownState({ mode: 'categories' });
-      setHighlightedIndex(-1);
-      setSearch('');
-    },
-    [dropdownState, schema, values, onChange],
-  );
+    emitChange(next);
+    afterValueSelected();
+  }
 
-  const closeDropdown = useCallback(() => {
-    setDropdownState({ mode: 'closed' });
-    setSearch('');
-    setHighlightedIndex(-1);
-    setSelectedTokenIndex(null);
-  }, []);
+  // ── Keyboard handling ──────────────────────
 
-  const handleInputChange = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => {
-      const val = e.target.value;
-      setSearch(val);
-      setSelectedTokenIndex(null);
-      if (dropdownState.mode === 'closed') {
-        setDropdownState({ mode: 'categories' });
-      }
-    },
-    [dropdownState.mode],
-  );
-
-  const handleKeyDown = useCallback(
-    (e: React.KeyboardEvent<HTMLInputElement>) => {
-      // Text entry mode: Enter creates token
-      if (dropdownState.mode === 'text-entry') {
-        if (e.key === 'Enter' && search.trim()) {
-          e.preventDefault();
-          const category = dropdownState.category;
-          const newValue = { ...values, [category]: search.trim() as never };
-          onChange(newValue as FilterValues<T>);
-          setDropdownState({ mode: 'closed' });
-          setSearch('');
-        } else if (e.key === 'Escape') {
-          e.preventDefault();
-          closeDropdown();
-        }
-        return;
-      }
-
-      // Date entry mode
-      if (dropdownState.mode === 'date-entry') {
-        if (e.key === 'Escape') {
-          e.preventDefault();
-          closeDropdown();
-        }
-        return;
-      }
-
-      const isOpen = dropdownState.mode === 'categories' || dropdownState.mode === 'values';
-
-      if (e.key === 'ArrowDown') {
+  function handleKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
+    if (mode === 'text-entry' && activeCategory) {
+      if (e.key === 'Enter' && search.trim()) {
         e.preventDefault();
-        if (!isOpen) {
-          setDropdownState({ mode: 'categories' });
-          return;
-        }
-        setHighlightedIndex((i) => Math.min(i + 1, items.length - 1));
-      } else if (e.key === 'ArrowUp') {
-        e.preventDefault();
-        if (isOpen) {
-          setHighlightedIndex((i) => Math.max(i - 1, 0));
-        }
-      } else if (e.key === 'Enter') {
-        e.preventDefault();
-        if (isOpen && items[highlightedIndex]) {
-          selectItem(items[highlightedIndex]);
-        }
+        emitChange({ ...values, [activeCategory]: search.trim() });
+        afterValueSelected();
       } else if (e.key === 'Escape') {
         e.preventDefault();
-        if (isOpen) {
-          if (dropdownState.mode === 'values') {
-            setDropdownState({ mode: 'categories' });
-            setSearch('');
-          } else {
-            closeDropdown();
-          }
-        }
-      } else if (e.key === 'Backspace' && !search) {
-        if (selectedTokenIndex !== null) {
-          tokens[selectedTokenIndex]?.remove();
-          setSelectedTokenIndex(null);
-        } else if (tokens.length > 0) {
-          setSelectedTokenIndex(tokens.length - 1);
-        }
+        goBack();
       }
-    },
-    [
-      dropdownState,
-      search,
-      items,
-      highlightedIndex,
-      tokens,
-      selectedTokenIndex,
-      values,
-      onChange,
-      selectItem,
-      closeDropdown,
-    ],
-  );
-
-  const handleFocus = useCallback(() => {
-    if (dropdownState.mode === 'closed') {
-      setDropdownState({ mode: 'categories' });
-      setHighlightedIndex(-1);
+      return;
     }
-  }, [dropdownState.mode]);
 
-  const handleBlur = useCallback(
-    () => {
-      requestAnimationFrame(() => {
-        if (pointerInsideRef.current) return;
-        const active = document.activeElement;
-        if (active && inputRef.current?.closest('[data-filter-tokens]')?.contains(active)) {
-          return;
-        }
-        closeDropdown();
-      });
-    },
-    [closeDropdown],
-  );
+    if (mode === 'date-entry' || mode === 'number-entry') {
+      if (e.key === 'Escape') { e.preventDefault(); goBack(); }
+      return;
+    }
 
-  const isOpen = dropdownState.mode !== 'closed';
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      if (!isOpen) { openCategories(); return; }
+      setHighlightedIndex((i) => Math.min(i + 1, items.length - 1));
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      if (isOpen) setHighlightedIndex((i) => Math.max(i - 1, 0));
+    } else if (e.key === 'Enter') {
+      e.preventDefault();
+      if (isOpen && items[highlightedIndex]) selectItem(items[highlightedIndex]);
+    } else if (e.key === 'Escape') {
+      e.preventDefault();
+      goBack();
+    } else if (e.key === 'Backspace' && !search) {
+      if (selectedTokenIndex !== null) {
+        tokens[selectedTokenIndex]?.remove();
+        setSelectedTokenIndex(null);
+      } else if (tokens.length > 0) {
+        setSelectedTokenIndex(tokens.length - 1);
+      }
+    }
+  }
+
+  function handleInputChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const val = e.target.value;
+    setSearch(val);
+    setSelectedTokenIndex(null);
+    if (mode === 'closed') setMode('categories');
+  }
+
+  function handleFocus() {
+    if (mode === 'closed') openCategories();
+  }
+
+  // ── ARIA ───────────────────────────────────
+
   const highlightedId = isOpen && items[highlightedIndex]
     ? `filter-tokens-item-${items[highlightedIndex].key}`
     : undefined;
+
+  // ── Return ─────────────────────────────────
+
+  const inputPlaceholder = mode === 'text-entry' && activeCategory
+    ? (schema[activeCategory]?.type === 'text'
+        ? (schema[activeCategory] as { placeholder?: string }).placeholder
+        : undefined) ?? `Type ${schema[activeCategory]?.label}...`
+    : tokens.length > 0
+      ? ''
+      : placeholder;
 
   return {
     tokens,
@@ -358,48 +373,39 @@ export function useFilterTokens<const T extends FilterSchema>(
       onChange: handleInputChange,
       onKeyDown: handleKeyDown,
       onFocus: handleFocus,
-      onBlur: handleBlur,
-      placeholder:
-        dropdownState.mode === 'text-entry'
-          ? (schema[dropdownState.category]?.type === 'text'
-              ? (schema[dropdownState.category] as { placeholder?: string }).placeholder
-              : undefined) || `Type ${schema[dropdownState.category]?.label}...`
-          : tokens.length > 0
-            ? ''
-            : placeholder,
+      onBlur: noop,
+      placeholder: inputPlaceholder,
       role: 'combobox' as const,
       'aria-expanded': isOpen,
       'aria-haspopup': 'listbox' as const,
       'aria-activedescendant': highlightedId,
       'aria-autocomplete': 'list' as const,
     },
-    containerProps: {
-      onPointerDown: () => { pointerInsideRef.current = true; },
-      onPointerUp: () => { requestAnimationFrame(() => { pointerInsideRef.current = false; }); },
-    },
     dropdown: {
       open: isOpen,
+      loading: asyncLoading,
       items,
       select: selectItem,
-      close: closeDropdown,
+      close,
+      goBack,
       highlightedIndex,
       setHighlightedIndex,
-      state: dropdownState,
+      state: {
+        mode,
+        category: activeCategory,
+      },
     },
-    open: () => {
-      if (dropdownState.mode === 'closed') {
-        setDropdownState({ mode: 'categories' });
-        setHighlightedIndex(-1);
-      }
-    },
-    clear: () => {
-      onChange({} as FilterValues<T>);
-      closeDropdown();
-    },
+    open: () => { if (mode === 'closed') openCategories(); },
+    openCategory: (key: string) => { selectCategory(key); },
+    clear: () => { emitChange({}); setDateLabels({}); close(); },
     setDateValue: (category: string, dateValue: { from: string; to?: string } | { date: string }) => {
-      const newValue = { ...values, [category]: dateValue as never };
-      onChange(newValue as FilterValues<T>);
-      closeDropdown();
+      setDateLabels((prev) => { const n = { ...prev }; delete n[category]; return n; });
+      emitChange({ ...values, [category]: dateValue });
+      afterValueSelected();
+    },
+    setNumberValue: (category: string, numValue: { min?: number; max?: number }) => {
+      emitChange({ ...values, [category]: numValue });
+      afterValueSelected();
     },
   } as FilterTokensReturn<T>;
 }

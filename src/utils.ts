@@ -1,20 +1,10 @@
 import type {
   FilterSchema,
-  FilterDef,
   FilterValues,
   Option,
   OptionsOrFn,
   FilterContext,
 } from './types';
-
-export function resolveOptions<T extends { value: string; label: string }>(
-  optionsOrFn: OptionsOrFn<T> | undefined,
-  ctx: FilterContext,
-): T[] | Promise<T[]> {
-  if (!optionsOrFn) return [];
-  if (typeof optionsOrFn === 'function') return optionsOrFn(ctx);
-  return [...optionsOrFn] as T[];
-}
 
 export function resolveOptionsSync<T extends { value: string; label: string }>(
   optionsOrFn: OptionsOrFn<T> | undefined,
@@ -23,7 +13,10 @@ export function resolveOptionsSync<T extends { value: string; label: string }>(
   if (!optionsOrFn) return [];
   if (typeof optionsOrFn !== 'function') return [...optionsOrFn] as T[];
   const result = optionsOrFn(ctx);
-  if (result instanceof Promise) return [];
+  if (result instanceof Promise) {
+    result.catch(() => {}); // prevent unhandled rejection — the async effect handles errors
+    return [];
+  }
   return result;
 }
 
@@ -35,14 +28,10 @@ export function findOptionLabel(
   return found ? found.label : value;
 }
 
-export function getFilterLabel(def: FilterDef): string {
-  return def.label;
-}
-
-export function formatDateShort(dateStr: string): string {
+export function formatDateShort(dateStr: string, locale = 'en-US'): string {
   try {
     const d = new Date(dateStr);
-    return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    return d.toLocaleDateString(locale, { month: 'short', day: 'numeric' });
   } catch {
     return dateStr;
   }
@@ -52,7 +41,9 @@ export function buildTokens(
   schema: FilterSchema,
   values: FilterValues<FilterSchema>,
   ctx: FilterContext,
-  onRemove: (category: string, tokenValue?: string) => void,
+  onRemove: (category: string) => void,
+  dateLabels: Record<string, string> = {},
+  locale?: string,
 ) {
   const tokens: {
     id: string;
@@ -69,15 +60,14 @@ export function buildTokens(
     if (def.type === 'select') {
       const options = resolveOptionsSync(def.options, ctx);
       if (def.multi && Array.isArray(val)) {
-        for (const v of val as string[]) {
-          tokens.push({
-            id: `${key}-${v}`,
-            category: key,
-            label: def.label,
-            displayValue: findOptionLabel(options, v),
-            remove: () => onRemove(key, v),
-          });
-        }
+        const labels = (val as string[]).map((v) => findOptionLabel(options, v));
+        tokens.push({
+          id: `${key}-multi`,
+          category: key,
+          label: def.label,
+          displayValue: labels.join(', '),
+          remove: () => onRemove(key),
+        });
       } else if (typeof val === 'string') {
         tokens.push({
           id: `${key}-${val}`,
@@ -89,14 +79,17 @@ export function buildTokens(
       }
     } else if (def.type === 'date') {
       const dateVal = val as { date?: string; from?: string; to?: string };
+      const fmt = (s: string) => formatDateShort(s, locale);
       let displayValue = '';
 
-      if ('from' in dateVal && dateVal.from) {
+      if (dateLabels[key]) {
+        displayValue = dateLabels[key];
+      } else if ('from' in dateVal && dateVal.from) {
         displayValue = dateVal.to
-          ? `${formatDateShort(dateVal.from)} – ${formatDateShort(dateVal.to)}`
-          : `Since ${formatDateShort(dateVal.from)}`;
+          ? `${fmt(dateVal.from)} – ${fmt(dateVal.to)}`
+          : `Since ${fmt(dateVal.from)}`;
       } else if ('date' in dateVal && dateVal.date) {
-        displayValue = formatDateShort(dateVal.date);
+        displayValue = fmt(dateVal.date);
       }
       if (displayValue) {
         tokens.push({
@@ -119,7 +112,7 @@ export function buildTokens(
       }
     } else if (def.type === 'number') {
       const numVal = val as { min?: number; max?: number };
-      const unit = (def as { unit?: string }).unit || '';
+      const unit = def.unit || '';
       let displayValue = '';
       if (numVal.min !== undefined && numVal.max !== undefined) {
         displayValue = `${numVal.min}–${numVal.max}${unit}`;

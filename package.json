@@ -1,8 +1,15 @@
 {
   "name": "filter-tokens",
   "version": "0.1.0",
+  "author": "Francesco Carrella <francesco.carrella@gmail.com>",
+  "homepage": "https://github.com/cescox/filter-tokens",
   "description": "Headless tokenized filter input hook for React. Pre-built shadcn/ui component available via registry.",
   "type": "module",
+  "packageManager": "pnpm@10.30.2",
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
   "main": "./dist/index.js",
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -12,24 +19,64 @@
         "types": "./dist/index.d.ts",
         "default": "./dist/index.js"
       }
-    }
+    },
+    "./headless": {
+      "import": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      }
+    },
+    "./components/filter-tokens": {
+      "default": "./src/components/filter-tokens.tsx"
+    },
+    "./components/filter-tokens.base": {
+      "default": "./src/components/filter-tokens.base.tsx"
+    },
+    "./components/ui/*": {
+      "default": "./src/components/ui/*.tsx"
+    },
+    "./lib/*": {
+      "default": "./src/lib/*.ts"
+    },
+    "./package.json": "./package.json"
   },
   "files": [
-    "dist"
+    "dist",
+    "src/components",
+    "src/lib",
+    "src/index.ts",
+    "src/types.ts",
+    "src/use-filter-tokens.ts",
+    "src/utils.ts"
   ],
   "sideEffects": false,
   "scripts": {
     "dev": "vite --config playground/vite.config.ts",
     "build": "tsc -p tsconfig.build.json && vite build",
+    "build:playground": "vite build --config playground/vite.config.ts",
+    "registry:build": "node scripts/build-registry.mjs",
     "test": "vitest run",
     "test:watch": "vitest",
     "lint": "tsc --noEmit"
   },
   "peerDependencies": {
+    "@base-ui/react": "^1.0.0",
+    "@radix-ui/react-popover": "^1.1.0",
+    "clsx": "^2.1.0",
+    "date-fns": "^4.0.0",
+    "lucide-react": "^0.477.0 || ^1.0.0",
     "react": "^18.0.0 || ^19.0.0",
-    "react-dom": "^18.0.0 || ^19.0.0"
+    "react-day-picker": "^9.0.0",
+    "react-dom": "^18.0.0 || ^19.0.0",
+    "tailwind-merge": "^3.0.0"
+  },
+  "peerDependenciesMeta": {
+    "@base-ui/react": { "optional": true },
+    "@radix-ui/react-popover": { "optional": true }
   },
   "devDependencies": {
+    "@base-ui/react": "^1.4.1",
+    "@radix-ui/react-popover": "^1.1.15",
     "@tailwindcss/vite": "^4.1.4",
     "@testing-library/jest-dom": "^6.6.3",
     "@testing-library/react": "^16.3.0",
@@ -39,18 +86,21 @@
     "@types/react-dom": "^19.1.2",
     "@vitejs/plugin-react": "^4.4.1",
     "clsx": "^2.1.1",
+    "date-fns": "^4.1.0",
     "jsdom": "^26.0.0",
     "lucide-react": "^0.477.0",
     "react": "^19.1.0",
     "react-day-picker": "^9.14.0",
     "react-dom": "^19.1.0",
+    "shadcn": "^4.2.0",
     "tailwind-merge": "^3.0.2",
     "tailwindcss": "^4.1.4",
     "tsx": "^4.19.0",
     "typescript": "^5.8.3",
     "vite": "^6.3.2",
     "vite-plugin-dts": "^4.5.3",
-    "vitest": "^3.1.2"
+    "vitest": "^3.1.2",
+    "vitest-fail-on-console": "^0.10.1"
   },
   "keywords": [
     "react",
@@ -66,6 +116,6 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/francesco-carrella/filter-tokens"
+    "url": "https://github.com/cescox/filter-tokens"
   }
 }

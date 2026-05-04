@@ -1,4 +1,4 @@
-import { renderHook, act } from '@testing-library/react';
+import { renderHook, act, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
 import { useFilterTokens } from '../use-filter-tokens';
 
@@ -34,6 +34,13 @@ const schema = {
     label: 'Search',
     placeholder: 'Search...',
   },
+  amount: {
+    type: 'number' as const,
+    label: 'Amount',
+    unit: '€',
+    min: 0,
+    max: 10000,
+  },
 } as const;
 
 function setup(value = {}) {
@@ -60,11 +67,10 @@ describe('useFilterTokens', () => {
       expect(result.current.tokens[0].displayValue).toBe('Error');
     });
 
-    it('derives multiple tokens from multi-select value', () => {
+    it('derives combined token from multi-select value', () => {
       const { result } = setup({ tags: ['bug', 'feature'] });
-      expect(result.current.tokens).toHaveLength(2);
-      expect(result.current.tokens[0].displayValue).toBe('Bug');
-      expect(result.current.tokens[1].displayValue).toBe('Feature');
+      expect(result.current.tokens).toHaveLength(1);
+      expect(result.current.tokens[0].displayValue).toBe('Bug, Feature');
     });
 
     it('derives token from date range value', () => {
@@ -87,14 +93,8 @@ describe('useFilterTokens', () => {
       expect(onChange).toHaveBeenCalledWith({});
     });
 
-    it('removes one value from multi-select', () => {
+    it('removes all values when multi-select token is removed', () => {
       const { result, onChange } = setup({ tags: ['bug', 'feature'] });
-      act(() => result.current.tokens[0].remove());
-      expect(onChange).toHaveBeenCalledWith({ tags: ['feature'] });
-    });
-
-    it('removes key when last multi-select value removed', () => {
-      const { result, onChange } = setup({ tags: ['bug'] });
       act(() => result.current.tokens[0].remove());
       expect(onChange).toHaveBeenCalledWith({});
     });
@@ -119,9 +119,9 @@ describe('useFilterTokens', () => {
       const { result } = setup();
       act(() => result.current.inputProps.onFocus());
       expect(result.current.dropdown.open).toBe(true);
-      expect(result.current.dropdown.items).toHaveLength(4);
+      expect(result.current.dropdown.items).toHaveLength(5);
       expect(result.current.dropdown.items.map((i) => i.key)).toEqual([
-        'status', 'tags', 'period', 'search',
+        'status', 'tags', 'period', 'search', 'amount',
       ]);
     });
 
@@ -273,6 +273,358 @@ describe('useFilterTokens', () => {
       act(() => result.current.dropdown.select(result.current.dropdown.items[0]));
       expect(result.current.dropdown.items).toHaveLength(2);
       expect(result.current.dropdown.items[0].label).toBe('Info');
+    });
+  });
+
+  describe('search auto-highlight', () => {
+    it('highlights first match when searching categories', () => {
+      const { result } = setup();
+      act(() => result.current.inputProps.onFocus());
+      act(() => {
+        result.current.inputProps.onChange({ target: { value: 'sta' } } as any);
+      });
+      expect(result.current.dropdown.items).toHaveLength(1);
+      expect(result.current.dropdown.highlightedIndex).toBe(0);
+    });
+
+    it('does not highlight when search is empty in categories', () => {
+      const { result } = setup();
+      act(() => result.current.inputProps.onFocus());
+      expect(result.current.dropdown.highlightedIndex).toBe(-1);
+    });
+  });
+
+  describe('text re-edit', () => {
+    it('pre-fills input with current text value on openCategory', () => {
+      const { result } = setup({ search: 'timeout' });
+      act(() => result.current.openCategory('search'));
+      expect(result.current.dropdown.state.mode).toBe('text-entry');
+      expect(result.current.inputProps.value).toBe('timeout');
+    });
+
+    it('starts empty for new text entry', () => {
+      const { result } = setup();
+      act(() => result.current.inputProps.onFocus());
+      const searchItem = result.current.dropdown.items.find((i) => i.key === 'search');
+      act(() => result.current.dropdown.select(searchItem!));
+      expect(result.current.inputProps.value).toBe('');
+    });
+  });
+
+  describe('date presets and custom', () => {
+    it('shows presets including Custom range item', () => {
+      const { result } = setup();
+      act(() => result.current.inputProps.onFocus());
+      const periodItem = result.current.dropdown.items.find((i) => i.key === 'period');
+      act(() => result.current.dropdown.select(periodItem!));
+      expect(result.current.dropdown.state.mode).toBe('values');
+      const customItem = result.current.dropdown.items.find((i) => i.key === '__custom_date__');
+      expect(customItem).toBeDefined();
+      expect(customItem!.label).toBe('Custom range...');
+    });
+
+    it('enters date-entry mode when selecting Custom range item', () => {
+      const { result } = setup();
+      act(() => result.current.inputProps.onFocus());
+      const periodItem = result.current.dropdown.items.find((i) => i.key === 'period');
+      act(() => result.current.dropdown.select(periodItem!));
+      const customItem = result.current.dropdown.items.find((i) => i.key === '__custom_date__');
+      act(() => result.current.dropdown.select(customItem!));
+      expect(result.current.dropdown.state.mode).toBe('date-entry');
+    });
+
+    it('goes to date-entry when clicking date pill with custom value', () => {
+      const { result } = setup({ period: { from: '2026-04-05T00:00:00Z', to: '2026-04-15T23:59:59Z' } });
+      act(() => result.current.openCategory('period'));
+      expect(result.current.dropdown.state.mode).toBe('date-entry');
+    });
+
+    it('goes back to presets from date-entry when presets exist', () => {
+      const { result } = setup({ period: { from: '2026-04-05T00:00:00Z', to: '2026-04-15T23:59:59Z' } });
+      act(() => result.current.openCategory('period'));
+      expect(result.current.dropdown.state.mode).toBe('date-entry');
+      act(() => result.current.dropdown.goBack());
+      expect(result.current.dropdown.state.mode).toBe('values');
+      expect(result.current.dropdown.items.length).toBeGreaterThan(1);
+    });
+
+    it('enters date-entry for date filters without presets', () => {
+      const noPresetSchema = {
+        when: {
+          type: 'date' as const,
+          label: 'When',
+        },
+      } as const;
+      const onChange = vi.fn();
+      const { result } = renderHook(() =>
+        useFilterTokens({ filters: noPresetSchema, value: {}, onChange }),
+      );
+      act(() => result.current.inputProps.onFocus());
+      act(() => result.current.dropdown.select(result.current.dropdown.items[0]));
+      expect(result.current.dropdown.state.mode).toBe('date-entry');
+    });
+
+    it('stores preset label and shows it in token', () => {
+      const { result, onChange } = setup();
+      act(() => result.current.inputProps.onFocus());
+      const periodItem = result.current.dropdown.items.find((i) => i.key === 'period');
+      act(() => result.current.dropdown.select(periodItem!));
+      const lastHourItem = result.current.dropdown.items[0];
+      act(() => result.current.dropdown.select(lastHourItem));
+      expect(onChange).toHaveBeenCalled();
+      const call = onChange.mock.calls[0][0];
+      expect(call.period).toBeDefined();
+      expect(call.period.from).toBeDefined();
+    });
+
+    it('Custom range is searchable', () => {
+      const { result } = setup();
+      act(() => result.current.inputProps.onFocus());
+      const periodItem = result.current.dropdown.items.find((i) => i.key === 'period');
+      act(() => result.current.dropdown.select(periodItem!));
+      act(() => {
+        result.current.inputProps.onChange({ target: { value: 'custom' } } as any);
+      });
+      expect(result.current.dropdown.items).toHaveLength(1);
+      expect(result.current.dropdown.items[0].key).toBe('__custom_date__');
+    });
+  });
+
+  describe('escape navigation', () => {
+    it('goes back from values to categories', () => {
+      const { result } = setup();
+      act(() => result.current.inputProps.onFocus());
+      act(() => result.current.dropdown.select(result.current.dropdown.items[0]));
+      expect(result.current.dropdown.state.mode).toBe('values');
+      act(() => result.current.dropdown.goBack());
+      expect(result.current.dropdown.state.mode).toBe('categories');
+      expect(result.current.dropdown.open).toBe(true);
+    });
+
+    it('goes back from text-entry to categories', () => {
+      const { result } = setup();
+      act(() => result.current.inputProps.onFocus());
+      const searchItem = result.current.dropdown.items.find((i) => i.key === 'search');
+      act(() => result.current.dropdown.select(searchItem!));
+      expect(result.current.dropdown.state.mode).toBe('text-entry');
+      act(() => result.current.dropdown.goBack());
+      expect(result.current.dropdown.state.mode).toBe('categories');
+    });
+
+    it('closes from categories', () => {
+      const { result } = setup();
+      act(() => result.current.inputProps.onFocus());
+      expect(result.current.dropdown.open).toBe(true);
+      act(() => result.current.dropdown.goBack());
+      expect(result.current.dropdown.open).toBe(false);
+    });
+  });
+
+  describe('multi-select toggle', () => {
+    it('toggles values on and off', () => {
+      const { result, onChange, rerender } = setup();
+      act(() => result.current.inputProps.onFocus());
+      const tagsItem = result.current.dropdown.items[1];
+      act(() => result.current.dropdown.select(tagsItem));
+      act(() => result.current.dropdown.select(result.current.dropdown.items[0]));
+      expect(onChange).toHaveBeenCalledWith({ tags: ['bug'] });
+
+      rerender({ value: { tags: ['bug'] } });
+      act(() => result.current.dropdown.select(result.current.dropdown.items[0]));
+      expect(onChange).toHaveBeenLastCalledWith({});
+    });
+
+    it('shows selected state for multi-select items', () => {
+      const { result } = setup({ tags: ['bug'] });
+      act(() => result.current.openCategory('tags'));
+      const bugItem = result.current.dropdown.items.find((i) => i.key === 'bug');
+      expect(bugItem?.selected).toBe(true);
+      const featureItem = result.current.dropdown.items.find((i) => i.key === 'feature');
+      expect(featureItem?.selected).toBe(false);
+    });
+  });
+
+  describe('setDateValue', () => {
+    it('sets date value and returns to categories', () => {
+      const { result, onChange } = setup();
+      act(() => result.current.openCategory('period'));
+      act(() => {
+        result.current.setDateValue('period', { from: '2026-04-05T00:00:00Z', to: '2026-04-15T23:59:59Z' });
+      });
+      expect(onChange).toHaveBeenCalledWith({
+        period: { from: '2026-04-05T00:00:00Z', to: '2026-04-15T23:59:59Z' },
+      });
+      expect(result.current.dropdown.state.mode).toBe('categories');
+    });
+  });
+
+  describe('async options', () => {
+    function asyncSetup() {
+      const asyncSchema = {
+        city: {
+          type: 'select' as const,
+          label: 'City',
+          options: vi.fn(() =>
+            Promise.resolve([
+              { value: 'nyc', label: 'New York' },
+              { value: 'la', label: 'Los Angeles' },
+            ]),
+          ),
+        },
+      } as const;
+      const onChange = vi.fn();
+      const result = renderHook(
+        ({ value }) => useFilterTokens({ filters: asyncSchema, value, onChange }),
+        { initialProps: { value: {} as Record<string, unknown> } },
+      );
+      return { ...result, onChange, asyncSchema };
+    }
+
+    it('sets loading true while async options are pending', async () => {
+      const { result } = asyncSetup();
+      act(() => result.current.inputProps.onFocus());
+      act(() => result.current.dropdown.select(result.current.dropdown.items[0]));
+      expect(result.current.dropdown.loading).toBe(true);
+      expect(result.current.dropdown.items).toHaveLength(0);
+      await act(async () => {});
+      expect(result.current.dropdown.loading).toBe(false);
+      expect(result.current.dropdown.items).toHaveLength(2);
+    });
+
+    it('resolves async options and shows items', async () => {
+      const { result } = asyncSetup();
+      act(() => result.current.inputProps.onFocus());
+      act(() => result.current.dropdown.select(result.current.dropdown.items[0]));
+      await act(async () => {});
+      expect(result.current.dropdown.items[0].label).toBe('New York');
+      expect(result.current.dropdown.items[1].label).toBe('Los Angeles');
+    });
+
+    it('sets loading false and logs error on rejection', async () => {
+      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+      const failSchema = {
+        city: {
+          type: 'select' as const,
+          label: 'City',
+          options: () => Promise.reject(new Error('network error')),
+        },
+      } as const;
+      const onChange = vi.fn();
+      const { result } = renderHook(() =>
+        useFilterTokens({ filters: failSchema, value: {}, onChange }),
+      );
+      act(() => result.current.inputProps.onFocus());
+      act(() => result.current.dropdown.select(result.current.dropdown.items[0]));
+      expect(result.current.dropdown.loading).toBe(true);
+      await waitFor(() => {
+        expect(result.current.dropdown.loading).toBe(false);
+      });
+      expect(result.current.dropdown.items).toHaveLength(0);
+      expect(consoleSpy).toHaveBeenCalledWith(
+        '[filter-tokens] Failed to load options:',
+        expect.any(Error),
+      );
+      consoleSpy.mockRestore();
+    });
+  });
+
+  describe('locale option', () => {
+    it('uses locale for date token display', () => {
+      const onChange = vi.fn();
+      const { result } = renderHook(() =>
+        useFilterTokens({
+          filters: schema,
+          value: { period: { from: '2026-04-05T12:00:00Z', to: '2026-04-15T12:00:00Z' } },
+          onChange,
+          locale: 'en-US',
+        }),
+      );
+      // en-US formats as "Apr 5" / "Apr 15"
+      expect(result.current.tokens[0].displayValue).toContain('Apr');
+    });
+  });
+
+  describe('dateLabels cleanup', () => {
+    it('cleans up stale dateLabels when value is cleared externally', () => {
+      const { result, onChange, rerender } = setup();
+      // Select a preset → stores dateLabel
+      act(() => result.current.inputProps.onFocus());
+      const periodItem = result.current.dropdown.items.find((i) => i.key === 'period');
+      act(() => result.current.dropdown.select(periodItem!));
+      act(() => result.current.dropdown.select(result.current.dropdown.items[0]));
+      expect(onChange).toHaveBeenCalled();
+
+      // Now clear value externally
+      rerender({ value: {} });
+      // Verify no stale tokens
+      expect(result.current.tokens).toHaveLength(0);
+    });
+  });
+
+  describe('backspace token selection', () => {
+    function keyDown(result: any, key: string) {
+      act(() => {
+        result.current.inputProps.onKeyDown({
+          key,
+          preventDefault: vi.fn(),
+        } as any);
+      });
+    }
+
+    it('selects last token on first Backspace, removes on second', () => {
+      const { result, onChange } = setup({ status: 'error', search: 'test' });
+      act(() => result.current.inputProps.onFocus());
+      keyDown(result, 'Backspace');
+      // First backspace selects last token (not removed yet)
+      expect(onChange).not.toHaveBeenCalled();
+      keyDown(result, 'Backspace');
+      // Second backspace removes it
+      expect(onChange).toHaveBeenCalledWith({ status: 'error' });
+    });
+  });
+
+  describe('number filter', () => {
+    it('enters number-entry mode when selecting number category', () => {
+      const { result } = setup();
+      act(() => result.current.inputProps.onFocus());
+      const amountItem = result.current.dropdown.items.find((i) => i.key === 'amount');
+      act(() => result.current.dropdown.select(amountItem!));
+      expect(result.current.dropdown.state.mode).toBe('number-entry');
+    });
+
+    it('derives token from number value with min and max', () => {
+      const { result } = setup({ amount: { min: 5, max: 100 } });
+      expect(result.current.tokens).toHaveLength(1);
+      expect(result.current.tokens[0].displayValue).toBe('5–100€');
+    });
+
+    it('derives token from number value with min only', () => {
+      const { result } = setup({ amount: { min: 50 } });
+      expect(result.current.tokens[0].displayValue).toBe('≥50€');
+    });
+
+    it('derives token from number value with max only', () => {
+      const { result } = setup({ amount: { max: 200 } });
+      expect(result.current.tokens[0].displayValue).toBe('≤200€');
+    });
+
+    it('sets number value and returns to categories', () => {
+      const { result, onChange } = setup();
+      act(() => result.current.openCategory('amount'));
+      expect(result.current.dropdown.state.mode).toBe('number-entry');
+      act(() => {
+        result.current.setNumberValue('amount', { min: 10, max: 500 });
+      });
+      expect(onChange).toHaveBeenCalledWith({ amount: { min: 10, max: 500 } });
+      expect(result.current.dropdown.state.mode).toBe('categories');
+    });
+
+    it('goes back from number-entry to categories', () => {
+      const { result } = setup();
+      act(() => result.current.openCategory('amount'));
+      expect(result.current.dropdown.state.mode).toBe('number-entry');
+      act(() => result.current.dropdown.goBack());
+      expect(result.current.dropdown.state.mode).toBe('categories');
     });
   });
 });

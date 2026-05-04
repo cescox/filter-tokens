@@ -5,11 +5,11 @@ import { resolve } from 'path';
 export default defineConfig({
   plugins: [react()],
   resolve: {
-    alias: {
-      'filter-tokens': resolve(__dirname, 'src'),
-      '@/lib/utils': resolve(__dirname, 'playground/src/lib/utils.ts'),
-      '@/components': resolve(__dirname, 'playground/src/components'),
-    },
+    alias: [
+      { find: '@filter-tokens/ui', replacement: resolve(__dirname, 'src') },
+      { find: /^filter-tokens$/, replacement: resolve(__dirname, 'src/index.ts') },
+      { find: /^filter-tokens\/(.*)$/, replacement: resolve(__dirname, 'src/$1') },
+    ],
   },
   test: {
     environment: 'jsdom',

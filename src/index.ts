@@ -14,7 +14,6 @@ export type {
   DropdownItem,
   DropdownState,
   Dropdown,
-  ContainerProps,
   InputProps,
   Option,
   DateRangePreset,

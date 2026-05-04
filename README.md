@@ -2,7 +2,7 @@
 
 A tokenized filter input for React. Type or click to add filters — each appears as a removable token inside the input.
 
-Inspired by the filter bars in Vercel, Linear, and Datadog.
+Inspired by the filter bars in GitHub, Vercel, Linear, and Datadog.
 
 ```
 ┌──────────────────────────────────────────────────────────────┐
@@ -12,15 +12,46 @@ Inspired by the filter bars in Vercel, Linear, and Datadog.
 
 ## Install
 
-The **npm package** gives you the headless hook. The **shadcn registry** gives you the pre-built component.
+### For shadcn projects
+
+Pick the variant that matches your `components.json` `style`:
 
 ```bash
-# Hook (headless, zero dependencies)
-pnpm add filter-tokens
+# Radix UI — styles: new-york, default, radix-* (most existing shadcn projects)
+npx shadcn@latest add https://cescox.pages.dev/r/filter-tokens.json
 
-# Component (shadcn-styled, uses the hook)
-npx shadcn@latest add https://filter-tokens.pages.dev/r/filter-tokens.json
+# Base UI — styles: base-* (newer shadcn CLI default)
+npx shadcn@latest add https://cescox.pages.dev/r/filter-tokens-base.json
 ```
+
+Either command copies the component source into `components/filter-tokens.tsx`, uses your existing `button` and `calendar` shadcn primitives, and installs the `filter-tokens` npm package (for the headless hook).
+
+### For non-shadcn projects (standalone)
+
+```bash
+pnpm add filter-tokens @radix-ui/react-popover react-day-picker date-fns lucide-react clsx tailwind-merge
+```
+
+```tsx
+import { FilterTokens } from "filter-tokens/components/filter-tokens";
+import type { FilterValues } from "filter-tokens";
+```
+
+Requires Tailwind v4 and the shadcn CSS variables (`--popover`, `--border`, `--primary`, etc.) defined in your global stylesheet — copy them from the [shadcn theming docs](https://ui.shadcn.com/docs/theming).
+
+### Headless hook only
+
+For custom UI with your own components:
+
+```bash
+pnpm add filter-tokens
+```
+
+```tsx
+import { useFilterTokens } from "filter-tokens";
+```
+
+See the [Headless Hook](#headless-hook) section below.
 
 ## Quick Start
 
@@ -72,9 +103,9 @@ export function MyFilters() {
 | Type | Description | Value shape |
 |------|-------------|-------------|
 | `select` | Single or multi-select from options | `string` or `string[]` |
-| `date` | Date with presets and/or custom range | `{ preset }` or `{ date }` or `{ from, to }` |
+| `date` | Date with presets and/or custom range | `{ date: string }` or `{ from: string, to?: string }` |
 | `text` | Free text, confirmed with Enter | `string` |
-| `number` | Numeric range (types only in v1) | `{ min?, max? }` |
+| `number` | Numeric range with min/max inputs | `{ min?: number, max?: number }` |
 
 ### Select
 
@@ -106,10 +137,18 @@ options: ({ filters }) => fetchOptions(filters.country)
   range: true,             // date range (from–to)
   time: true,              // include time
   presets: [
-    { value: "24h", label: "Last 24h" },
-    { value: "7d", label: "Last 7 days" },
+    { label: "Last 24h", from: () => new Date(Date.now() - 86400000) },
+    { label: "Last 7 days", from: () => new Date(Date.now() - 604800000) },
   ],
 }
+```
+
+Single date presets use `date` instead of `from`:
+
+```tsx
+presets: [
+  { label: "Today", date: () => new Date() },
+]
 ```
 
 ### Text
@@ -120,6 +159,33 @@ options: ({ filters }) => fetchOptions(filters.country)
   label: "Search",
   placeholder: "Search logs...",
 }
+```
+
+### Number
+
+```tsx
+{
+  type: "number",
+  label: "Amount",
+  unit: "€",               // optional, shown after inputs and in token
+  min: 0,                  // optional, passed to input
+  max: 10000,              // optional, passed to input
+}
+```
+
+## Locale
+
+Pass a date-fns locale to localize the calendar, date inputs, and token display:
+
+```tsx
+import { fr } from "date-fns/locale";
+
+<FilterTokens
+  filters={filters}
+  value={value}
+  onChange={setValue}
+  dateLocale={fr}
+/>
 ```
 
 ## Headless Hook
@@ -144,9 +210,10 @@ function MyCustomFilter() {
           <button onClick={token.remove}>×</button>
         </span>
       ))}
-      <input {...ft.inputProps} ref={ft.inputProps.ref} />
+      <input {...ft.inputProps} />
       {ft.dropdown.open && (
         <ul>
+          {ft.dropdown.loading && <li>Loading...</li>}
           {ft.dropdown.items.map(item => (
             <li key={item.key} onClick={() => ft.dropdown.select(item)}>
               {item.label}
@@ -172,9 +239,9 @@ The component uses shadcn CSS variables for theming and `data-slot` attributes o
 />
 ```
 
-Available slots: `filter-tokens`, `filter-tokens-input-wrapper`, `filter-tokens-token`, `filter-tokens-token-label`, `filter-tokens-token-value`, `filter-tokens-token-remove`, `filter-tokens-input`, `filter-tokens-clear`, `filter-tokens-dropdown`, `filter-tokens-dropdown-item`, `filter-tokens-dropdown-header`, `filter-tokens-date-panel`.
+Available slots: `filter-tokens`, `filter-tokens-trigger`, `filter-tokens-token`, `filter-tokens-token-label`, `filter-tokens-token-value`, `filter-tokens-token-remove`, `filter-tokens-clear`, `filter-tokens-search`, `filter-tokens-dropdown`, `filter-tokens-dropdown-header`, `filter-tokens-dropdown-item`, `filter-tokens-loading`, `filter-tokens-empty`, `filter-tokens-calendar`, `filter-tokens-number`, `filter-tokens-date-input`.
 
-State attributes: `data-highlighted`, `data-selected`, `data-category`, `data-type`, `data-disabled`.
+State attributes: `data-highlighted`, `data-selected`, `data-category`, `data-type`, `data-disabled`, `data-state`.
 
 ## TypeScript
 
