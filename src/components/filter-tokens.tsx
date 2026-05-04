@@ -504,7 +504,12 @@ function RangeCalendarPanel({
 
   function handleApply() {
     if (!from) return;
-    const toDate = new Date(to ?? from);
+    if (!to) {
+      // Open-ended "Since X" — leave `to` undefined so consumers see no upper bound
+      onSelect({ from: from.toISOString() });
+      return;
+    }
+    const toDate = new Date(to);
     if (!showTime) toDate.setHours(23, 59, 59, 999);
     onSelect({ from: from.toISOString(), to: toDate.toISOString() });
   }

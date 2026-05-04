@@ -255,6 +255,24 @@ describe('FilterTokens date presets', () => {
     expect(screen.getByLabelText('Start date and time')).toBeInTheDocument();
   });
 
+  it('applies "since X" range with only start date set', async () => {
+    const user = userEvent.setup();
+    render(<Setup />);
+    await user.click(screen.getByRole('button', { name: 'Filter...' }));
+    await user.click(screen.getByText('Period'));
+    await user.click(screen.getByText('Custom range...'));
+    // Type only the Start date — leave End empty
+    const startInput = screen.getByLabelText('Start date and time');
+    await user.clear(startInput);
+    await user.type(startInput, '04/15/2026');
+    // Tab away to commit the input (handleBlur parses)
+    await user.tab();
+    await user.click(screen.getByRole('button', { name: 'Apply' }));
+    const period = getValue().period;
+    expect(period.from).toBeDefined();
+    expect(period.to).toBeUndefined();
+  });
+
   it('shows presets when re-clicking preset date pill', async () => {
     const user = userEvent.setup();
     render(<Setup />);
