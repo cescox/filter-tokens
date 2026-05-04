@@ -310,6 +310,7 @@ function FilterTokens<const T extends FilterSchema>({
               onSelect={(dateValue) => {
                 ft.setDateValue(activeCategory, dateValue);
               }}
+              onCancel={ft.dropdown.goBack}
             />
           ) : (
             <SingleCalendarPanel
@@ -323,6 +324,7 @@ function FilterTokens<const T extends FilterSchema>({
               onSelect={(dateValue) => {
                 ft.setDateValue(activeCategory, dateValue);
               }}
+              onCancel={ft.dropdown.goBack}
             />
           ))}
 
@@ -342,6 +344,7 @@ function FilterTokens<const T extends FilterSchema>({
               onSelect={(numValue) => {
                 ft.setNumberValue(activeCategory, numValue);
               }}
+              onCancel={ft.dropdown.goBack}
             />
           )}
         </PopoverPrimitive.Content>
@@ -461,11 +464,13 @@ function RangeCalendarPanel({
   locale,
   initialValue,
   onSelect,
+  onCancel,
 }: {
   showTime: boolean;
   locale?: Locale;
   initialValue?: { from?: string; to?: string };
   onSelect: (value: { from: string; to?: string }) => void;
+  onCancel: () => void;
 }) {
   const [from, setFrom] = React.useState<Date | undefined>(() =>
     initialValue?.from ? new Date(initialValue.from) : undefined,
@@ -612,12 +617,11 @@ function RangeCalendarPanel({
           components={{ DayButton: DayButtonWithHover }}
         />
       </div>
-      <div className="px-3 pb-3">
-        <Button
-          className="w-full"
-          disabled={!from}
-          onClick={handleApply}
-        >
+      <div className="flex justify-end gap-2 px-3 pb-3">
+        <Button variant="ghost" onClick={onCancel}>
+          Cancel
+        </Button>
+        <Button disabled={!from} onClick={handleApply}>
           Apply
         </Button>
       </div>
@@ -632,11 +636,13 @@ function SingleCalendarPanel({
   locale,
   initialValue,
   onSelect,
+  onCancel,
 }: {
   showTime: boolean;
   locale?: Locale;
   initialValue?: { date?: string };
   onSelect: (value: { date: string }) => void;
+  onCancel: () => void;
 }) {
   const [selected, setSelected] = React.useState<Date | undefined>(() => {
     if (!initialValue?.date) return undefined;
@@ -684,9 +690,12 @@ function SingleCalendarPanel({
           }}
         />
       </div>
-      {selected && showTime && (
-        <div className="px-3 pb-3">
-          <Button className="w-full" onClick={handleApply}>
+      {showTime && (
+        <div className="flex justify-end gap-2 px-3 pb-3">
+          <Button variant="ghost" onClick={onCancel}>
+            Cancel
+          </Button>
+          <Button disabled={!selected} onClick={handleApply}>
             Apply
           </Button>
         </div>
@@ -703,12 +712,14 @@ function NumberEntryPanel({
   max,
   initialValue,
   onSelect,
+  onCancel,
 }: {
   unit?: string;
   min?: number;
   max?: number;
   initialValue?: { min?: number; max?: number };
   onSelect: (value: { min?: number; max?: number }) => void;
+  onCancel: () => void;
 }) {
   const [minVal, setMinVal] = React.useState(initialValue?.min?.toString() ?? "");
   const [maxVal, setMaxVal] = React.useState(initialValue?.max?.toString() ?? "");
@@ -774,8 +785,11 @@ function NumberEntryPanel({
         />
         {unit && <span className="text-xs text-muted-foreground">{unit}</span>}
       </div>
-      <div className="px-2">
-        <Button className="w-full" disabled={!hasValue} onClick={handleApply}>
+      <div className="flex justify-end gap-2 px-2">
+        <Button variant="ghost" onClick={onCancel}>
+          Cancel
+        </Button>
+        <Button disabled={!hasValue} onClick={handleApply}>
           Apply
         </Button>
       </div>

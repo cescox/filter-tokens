@@ -480,4 +480,14 @@ describe('FilterTokens number entry', () => {
     render(<Setup initialValue={{ amount: { min: 5, max: 100 } }} />);
     expect(screen.getByLabelText('Remove Amount: 5–100€')).toBeInTheDocument();
   });
+
+  it('Cancel discards entry without committing', async () => {
+    const user = userEvent.setup();
+    render(<Setup />);
+    await user.click(screen.getByRole('button', { name: 'Filter...' }));
+    await user.click(screen.getByText('Amount'));
+    await user.type(screen.getByLabelText(/Minimum value/), '42');
+    await user.click(screen.getByRole('button', { name: 'Cancel' }));
+    expect(getValue()).toEqual({});
+  });
 });
