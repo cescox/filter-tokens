@@ -14,7 +14,7 @@ export type {
   DropdownItem,
   DropdownState,
   Dropdown,
-  InputProps,
+  FilterTokensInputProps,
   Option,
   DateRangePreset,
   DateSinglePreset,

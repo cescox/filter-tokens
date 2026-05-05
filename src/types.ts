@@ -125,7 +125,7 @@ export type DropdownState =
 
 // ── Hook return ────────────────────────────
 
-export interface InputProps {
+export interface FilterTokensInputProps {
   ref: RefObject<HTMLInputElement | null>;
   value: string;
   onChange: (e: ChangeEvent<HTMLInputElement>) => void;
@@ -168,7 +168,7 @@ export interface FilterTokensReturn<T extends FilterSchema> {
    * Auto-clears after ~1500ms.
    */
   announcement: string;
-  inputProps: InputProps;
+  inputProps: FilterTokensInputProps;
   dropdown: Dropdown;
   open: () => void;
   openCategory: (key: string) => void;
