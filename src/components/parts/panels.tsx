@@ -29,13 +29,16 @@ export function Panels<T extends FilterSchema>({
   const activeDef = (filters as FilterSchema)[activeCategory];
   if (!activeDef) return null;
 
+  // Cast through a record once. The hook's generic guarantees the runtime
+  // value lives at activeCategory, but the per-branch typing differs.
+  const currentValue = (value as Record<string, unknown>)[activeCategory];
+
   if (inputType === "date" && activeDef.type === "date") {
-    const dateValue = (value as Record<string, unknown>)[activeCategory];
     return activeDef.range === true ? (
       <RangeCalendarPanel
         showTime={activeDef.time === true}
         locale={dateLocale}
-        initialValue={dateValue as { from?: string; to?: string } | undefined}
+        initialValue={currentValue as { from?: string; to?: string } | undefined}
         onSelect={(v) => ft.setDateValue(activeCategory, v)}
         onCancel={ft.dropdown.close}
       />
@@ -43,7 +46,7 @@ export function Panels<T extends FilterSchema>({
       <SingleCalendarPanel
         showTime={activeDef.time === true}
         locale={dateLocale}
-        initialValue={dateValue as { date?: string } | undefined}
+        initialValue={currentValue as { date?: string } | undefined}
         onSelect={(v) => ft.setDateValue(activeCategory, v)}
         onCancel={ft.dropdown.close}
       />
@@ -56,11 +59,7 @@ export function Panels<T extends FilterSchema>({
         unit={activeDef.unit}
         min={activeDef.min}
         max={activeDef.max}
-        initialValue={
-          (value as Record<string, unknown>)[activeCategory] as
-            | { min?: number; max?: number }
-            | undefined
-        }
+        initialValue={currentValue as { min?: number; max?: number } | undefined}
         onSelect={(v) => ft.setNumberValue(activeCategory, v)}
         onCancel={ft.dropdown.close}
       />

@@ -6,6 +6,12 @@ import { enUS } from "date-fns/locale";
 import type { Locale } from "date-fns";
 import { cn } from "filter-tokens/lib/utils";
 
+// Reference date used purely to render the placeholder so the user sees
+// what shape the input expects. Year is intentionally far in the past so
+// it reads as a sample, not a hint about the active range. The day (15) is
+// >12 to be unambiguous between mm/dd and dd/mm conventions.
+const PLACEHOLDER_REFERENCE_DATE = new Date(2000, 0, 15, 13, 30);
+
 export interface DateTimeRowProps {
   label: string;
   date: Date | undefined;
@@ -37,7 +43,7 @@ export function DateTimeRow({
 }: DateTimeRowProps) {
   const loc = locale ?? enUS;
   const fmt = showTime ? "P p" : "P";
-  const ph = format(new Date(2026, 0, 15, 13, 30), fmt, { locale: loc });
+  const ph = format(PLACEHOLDER_REFERENCE_DATE, fmt, { locale: loc });
   const inputId = React.useId();
 
   function formatDate(d: Date) {
