@@ -41,14 +41,23 @@ export function RangeCalendarPanel({
     const fromDate = from
       ? new Date(from.getFullYear(), from.getMonth(), from.getDate()).getTime()
       : undefined;
+    const toDate = to
+      ? new Date(to.getFullYear(), to.getMonth(), to.getDate()).getTime()
+      : undefined;
 
     if (activeField === "start") {
       setFrom(day);
-      setTo(undefined);
+      // Only invalidate the existing end if the new start is *after* it.
+      // Re-editing the start of an existing range should preserve the end —
+      // clearing it on every Start click made the calendar feel destructive.
+      if (toDate !== undefined && dayDate > toDate) {
+        setTo(undefined);
+      }
       setActiveField("end");
     } else {
       if (fromDate !== undefined && dayDate < fromDate) {
-        // Clicked before start date while End is active — reset start, clear end
+        // Clicked before start while End is active: shift start to the clicked
+        // day. Keep End active so the user can still pick an end date.
         setFrom(day);
         setTo(undefined);
       } else {
@@ -127,6 +136,10 @@ export function RangeCalendarPanel({
           active={activeField === "start"}
           onFocus={() => setActiveField("start")}
           onDateChange={(d) => {
+            if (d === undefined) {
+              setFrom(undefined);
+              return;
+            }
             setFrom(d);
             if (to && d > to) setTo(undefined);
             setMonth(d);
@@ -144,6 +157,10 @@ export function RangeCalendarPanel({
           active={activeField === "end"}
           onFocus={() => setActiveField("end")}
           onDateChange={(d) => {
+            if (d === undefined) {
+              setTo(undefined);
+              return;
+            }
             if (showTime && d.getHours() === 0 && d.getMinutes() === 0) {
               d.setHours(23, 59, 59, 999);
             }
@@ -225,7 +242,7 @@ export function SingleCalendarPanel({
           date={selected}
           onDateChange={(d) => {
             setSelected(d);
-            setMonth(d);
+            if (d) setMonth(d);
           }}
           showTime={showTime}
           locale={locale}

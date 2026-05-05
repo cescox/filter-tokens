@@ -9,7 +9,13 @@ import { cn } from "filter-tokens/lib/utils";
 export interface DateTimeRowProps {
   label: string;
   date: Date | undefined;
-  onDateChange: (d: Date) => void;
+  /**
+   * Called with the parsed date on a successful edit, OR with `undefined`
+   * when the user explicitly clears the input. The panel decides whether
+   * an undefined value clears just this field or also clears the other
+   * end of the range.
+   */
+  onDateChange: (d: Date | undefined) => void;
   showTime: boolean;
   locale?: Locale;
   active?: boolean;
@@ -63,6 +69,13 @@ export function DateTimeRow({
   }, [date, fmt, loc]);
 
   function handleBlur() {
+    // Empty input + a previously-set date == "the user wiped this date out".
+    // Without this, the input snaps back to the old value and the user can
+    // never clear the field once a date has been chosen.
+    if (!text.trim()) {
+      if (date) onDateChange(undefined);
+      return;
+    }
     const parsed = parseInput(text);
     if (!parsed) {
       if (date) setText(formatDate(date));
