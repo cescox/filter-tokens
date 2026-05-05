@@ -468,6 +468,40 @@ describe('useFilterTokens', () => {
       const featureItem = result.current.dropdown.items.find((i) => i.key === 'feature');
       expect(featureItem?.selected).toBe(false);
     });
+
+    it('resets search and highlight after each multi-select pick', () => {
+      // Was a real UX bug: pick one value via mouse → search filter and
+      // listbox stayed narrowed, focus slid into the popover.
+      const { result } = setup();
+      act(() => result.current.openCategory('tags'));
+      // Type to filter the listbox
+      act(() => {
+        result.current.inputProps.onChange({ target: { value: 'bug' } } as any);
+      });
+      expect(result.current.inputProps.value).toBe('bug');
+      // Pick the only matching item
+      const bugItem = result.current.dropdown.items.find((i) => i.key === 'bug');
+      act(() => result.current.dropdown.select(bugItem!));
+      // Search must clear so the user can type the next value
+      expect(result.current.inputProps.value).toBe('');
+      // Highlight resets to the top
+      expect(result.current.dropdown.highlightedIndex).toBe(0);
+      // Mode stays in values (multi keeps the dropdown open)
+      expect(result.current.dropdown.state.mode).toBe('values');
+    });
+  });
+
+  describe('re-edit highlight (single-select)', () => {
+    it('highlights the currently chosen value when re-entering values mode', () => {
+      // Was a real UX bug: re-clicking Status: Failed chip highlighted
+      // Succeeded (index 0); pressing Enter silently overwrote Failed.
+      const { result } = setup({ status: 'error' });
+      act(() => result.current.openCategory('status'));
+      // Status options are [success(0), error(1)]. Should highlight error.
+      const items = result.current.dropdown.items;
+      const errorIdx = items.findIndex((i) => i.key === 'error');
+      expect(result.current.dropdown.highlightedIndex).toBe(errorIdx);
+    });
   });
 
   describe('setDateValue', () => {
