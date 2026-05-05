@@ -27,9 +27,14 @@ export function RangeCalendarPanel({
   const [to, setTo] = React.useState<Date | undefined>(() =>
     initialValue?.to ? new Date(initialValue.to) : undefined,
   );
-  const [month, setMonth] = React.useState<Date>(() => from ?? new Date());
+  // Open the calendar on whichever side of the range is already set so the
+  // existing date is in view. Falls through to today for a fresh range.
+  const [month, setMonth] = React.useState<Date>(() => from ?? to ?? new Date());
+  // For a fresh range, start with the Start field active; for re-editing an
+  // End-only ("Until X") filter, default to the End field so the user can
+  // refine without first clicking anywhere.
   const [activeField, setActiveField] = React.useState<"start" | "end">(
-    "start",
+    !initialValue?.from && initialValue?.to ? "end" : "start",
   );
   const [hoveredDay, setHoveredDay] = React.useState<Date | undefined>();
   const endInputRef = React.useRef<HTMLInputElement>(null);
@@ -102,8 +107,15 @@ export function RangeCalendarPanel({
     };
   }, []);
 
-  // Build modifiers for range highlighting on single-mode calendar
+  // Build modifiers for range highlighting on single-mode calendar.
+  // Covers four cases: nothing set, only Start, only End, both set (real range).
   const rangeModifiers = React.useMemo(() => {
+    // Only End is set → highlight End as a single selected day so the user
+    // sees the chosen "Until X" date on the calendar. Without this branch
+    // the calendar shows no visual feedback at all for End-only filters.
+    if (!from && to) {
+      return { range_end: [to], selected: [to] };
+    }
     if (!from) return {};
 
     // Show hover preview when End is active

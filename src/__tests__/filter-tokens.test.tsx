@@ -357,6 +357,51 @@ describe('FilterTokens date presets', () => {
     expect(screen.getByText(/Until /)).toBeInTheDocument();
   });
 
+  it('preserves the End when typing a new Start that falls before End', async () => {
+    // Re-editing the Start of an existing range used to wipe the End on
+    // every change. Now End is preserved as long as the new Start is on or
+    // before the existing End.
+    const user = userEvent.setup();
+    render(
+      <Setup
+        initialValue={{
+          period: { from: '2026-04-10T00:00:00Z', to: '2026-04-20T23:59:59Z' },
+        }}
+      />,
+    );
+    await user.click(screen.getByText('Period:').closest('[role="button"]')!);
+    const startInput = screen.getByLabelText('Start date and time');
+    await user.clear(startInput);
+    await user.type(startInput, '04/15/2026');
+    await user.tab();
+    await user.click(screen.getByRole('button', { name: 'Apply' }));
+    const period = getValue().period;
+    expect(period.from).toBeDefined();
+    expect(period.to).toBeDefined();
+  });
+
+  it('clears a date when its input is emptied', async () => {
+    // Used to be: emptying a date input + Tab restored the previous value.
+    // Now empty-on-blur calls onDateChange(undefined) so the field clears.
+    const user = userEvent.setup();
+    render(
+      <Setup
+        initialValue={{
+          period: { from: '2026-04-10T00:00:00Z', to: '2026-04-20T23:59:59Z' },
+        }}
+      />,
+    );
+    await user.click(screen.getByText('Period:').closest('[role="button"]')!);
+    const endInput = screen.getByLabelText('End date and time');
+    await user.clear(endInput);
+    await user.tab();
+    expect(endInput).toHaveValue('');
+    await user.click(screen.getByRole('button', { name: 'Apply' }));
+    const period = getValue().period;
+    expect(period.from).toBeDefined();
+    expect(period.to).toBeUndefined();
+  });
+
   it('shows presets when re-clicking preset date pill', async () => {
     const user = userEvent.setup();
     render(<Setup />);
