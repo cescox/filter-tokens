@@ -5,42 +5,43 @@ import { XIcon } from "lucide-react";
 import { cn } from "filter-tokens/lib/utils";
 
 /**
- * Visual rendering of a Token. Distinct from the `Token` data type
- * exported from the package — that's the value object (id, category,
- * label, displayValue, remove); this is the chip-shaped UI element.
+ * Visual rendering of a token (the pill-shaped UI element). Distinct from
+ * the `FilterTokensToken` data type — that's the value object (id, category,
+ * label, displayValue, remove); this is the visual element rendered inside
+ * the trigger.
  */
-export interface ChipProps {
+export interface TokenProps {
   category: string;
   label: string;
   displayValue: string;
-  /** Resolved aria-label string for the chip (`messages.chipName`). */
+  /** Resolved aria-label for the token (`messages.tokenAria`). */
   ariaLabel: string;
-  /** Resolved aria-label string for the remove button (`messages.chipRemoveName`). */
+  /** Resolved aria-label for the remove button (`messages.tokenRemoveAria`). */
   removeAriaLabel: string;
   onRemove: () => void;
   onClick?: () => void;
   disabled?: boolean;
   /**
-   * Move focus to the previous chip (ArrowLeft on a focused chip).
-   * Trigger passes a noop / undefined when there is no previous chip.
+   * Move focus to the previous token (ArrowLeft on a focused token).
+   * Trigger passes undefined when there is no previous token.
    */
   onPrevious?: () => void;
   /**
-   * Move focus to the next chip, falling back to the input when this is
-   * the last chip (ArrowRight on a focused chip).
+   * Move focus to the next token, falling back to the input when this is
+   * the last token (ArrowRight on a focused token).
    */
   onNext?: () => void;
   /**
-   * Step out of the chip strip and back to the input (Escape on a focused
-   * chip). Aligns with Mantine's chip-input behaviour.
+   * Step out of the token strip and back to the input (Escape on a focused
+   * token). Aligns with Mantine's tag-input behaviour.
    */
   onEscape?: () => void;
 }
 
-export const Chip = React.forwardRef<
+export const Token = React.forwardRef<
   HTMLSpanElement,
-  ChipProps
->(function Chip(
+  TokenProps
+>(function Token(
   { category, label, displayValue, ariaLabel, removeAriaLabel, onRemove, onClick, disabled, onPrevious, onNext, onEscape },
   ref,
 ) {
@@ -66,7 +67,7 @@ export const Chip = React.forwardRef<
       }}
       onMouseDown={(e) => {
         // Prevent the trigger wrapper's mousedown-to-focus-input handler
-        // from stealing focus before the chip's click runs.
+        // from stealing focus before the token's click runs.
         e.stopPropagation();
       }}
       onKeyDown={(e) => {

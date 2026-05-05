@@ -187,7 +187,7 @@ export interface FilterTokensDropdown<T extends FilterSchema = FilterSchema> {
 export interface FilterTokensReturn<T extends FilterSchema> {
   tokens: FilterTokensToken[];
   /**
-   * Screen-reader announcement string for chip add/remove operations.
+   * Screen-reader announcement string for token add/remove operations.
    * Wire this to a visually-hidden element with aria-live="polite".
    * Auto-clears after ~1500ms.
    */
@@ -228,7 +228,7 @@ export interface FilterTokensReturn<T extends FilterSchema> {
  *   Role suffix (what kind of string it is):
  *     *Aria         — accessible name (aria-label)
  *     *Label        — visible static text
- *     *Format       — template producing chip displayValue text
+ *     *Format       — template producing token displayValue text
  *     *Placeholder  — input placeholder
  *     *Announcement — aria-live message
  *     *Hint         — inline visible help (may contain markup)

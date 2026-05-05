@@ -33,7 +33,7 @@ export function findOptionLabel(
 }
 
 /**
- * Render a short month/day for a chip's date display. Passing `locale`
+ * Render a short month/day for a token's date display. Passing `locale`
  * undefined (the default) defers to the runtime — the browser's preferred
  * locale on the client, the Node default on the server. Pass an explicit
  * BCP 47 tag (e.g. 'fr-FR') to force a specific format.
@@ -49,8 +49,8 @@ export function formatDateShort(dateStr: string, locale?: string): string {
 
 /**
  * Render a single filter value as the user-visible string. Shared by token
- * rendering (chips) and aria-live announcement diffs so the spoken text and
- * the visible chip stay in sync.
+ * rendering (tokens) and aria-live announcement diffs so the spoken text and
+ * the visible token stay in sync.
  *
  * `dateLabel`, when set, wins over the formatted from/to/date — it's how the
  * preset name ("Last 30 days") survives instead of being re-rendered as a

@@ -493,7 +493,7 @@ describe('useFilterTokens', () => {
 
   describe('re-edit highlight (single-select)', () => {
     it('highlights the currently chosen value when re-entering values mode', () => {
-      // Was a real UX bug: re-clicking Status: Failed chip highlighted
+      // Was a real UX bug: re-clicking Status: Failed token highlighted
       // Succeeded (index 0); pressing Enter silently overwrote Failed.
       const { result } = setup({ status: 'error' });
       act(() => result.current.dropdown.openFilter('status'));
@@ -680,7 +680,7 @@ describe('useFilterTokens', () => {
       act(() => result.current.inputProps.onFocus());
       // With isComposing=true the Backspace must be a no-op so that
       // Korean/Japanese/etc. input composition can use Backspace to delete
-      // composing characters without losing the last chip.
+      // composing characters without losing the last token.
       keyDown(result, 'Backspace', { isComposing: true });
       expect(onChange).not.toHaveBeenCalled();
     });

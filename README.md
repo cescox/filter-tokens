@@ -1,6 +1,6 @@
 # filter-tokens
 
-GitHub-style filter input for React, with visual chips. Type or click to add filters — each appears as a removable token inside the input.
+GitHub-style filter input for React. Type or click to add filters — each appears as a removable token inside the input.
 
 ```
 ┌──────────────────────────────────────────────────────────────────┐
@@ -209,7 +209,7 @@ import { fr } from "date-fns/locale";
 
 ## Messages (i18n)
 
-Every user-visible string — chip aria-labels, popup error/empty text, panel buttons, date/number labels, placeholders — is overridable via a `messages` prop. Defaults are English; pass a partial object with only the entries you want to change:
+Every user-visible string — token aria-labels, popup error/empty text, panel buttons, date/number labels, placeholders — is overridable via a `messages` prop. Defaults are English; pass a partial object with only the entries you want to change:
 
 ```tsx
 import { fr } from "date-fns/locale";
@@ -247,7 +247,7 @@ Same `messages` option is accepted by `useFilterTokens` for hook-only consumers.
 |---|---|
 | `*Aria` | Accessible name (aria-label) |
 | `*Label` | Visible static text |
-| `*Format` | Template producing chip displayValue text |
+| `*Format` | Template producing token displayValue text |
 | `*Placeholder` | Input placeholder |
 | `*Announcement` | aria-live message |
 | `*Hint` | Inline visible help (may contain markup) |
@@ -324,7 +324,7 @@ The component and hook are client-only — both ship with the `"use client"` dir
 
 - **vs `bazza/ui`'s `data-table-filter`** — that lives in a table header. filter-tokens is unbounded: it's a standalone input you can drop above any view (list, board, map, log stream).
 - **vs Radix Combobox / cmdk** — those are command/menu primitives. filter-tokens is a filter primitive: schema-driven, multi-step (categories → values), with date and number entry built in.
-- **vs `react-select` + your own chip rendering** — you'd reinvent the dropdown nav, the schema typing, the date and number panels, the async cancellation, and the keyboard model. filter-tokens is the assembled answer.
+- **vs `react-select` + your own token rendering** — you'd reinvent the dropdown nav, the schema typing, the date and number panels, the async cancellation, and the keyboard model. filter-tokens is the assembled answer.
 
 ## Browser support
 

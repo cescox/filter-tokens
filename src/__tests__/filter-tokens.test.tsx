@@ -4,7 +4,7 @@ import { describe, it, expect } from 'vitest';
 import { FilterTokens } from '../components/filter-tokens';
 import React from 'react';
 
-// Pattern A focus management runs in requestAnimationFrame so the chip-remove
+// Pattern A focus management runs in requestAnimationFrame so the token-remove
 // re-render commits before we move focus. Tests need to wait for that frame
 // AND wrap the resulting state updates (handleFocus → openCategories) in act.
 async function flushFocus() {
@@ -98,7 +98,7 @@ describe('FilterTokens rendering', () => {
   it('keeps "Filter..." input placeholder visible when tokens exist', () => {
     render(<Setup initialValue={{ status: 'error' }} />);
     // Pattern A: the bordered wrapper hosts a real <input> as a flex sibling
-    // to the chips. The input's placeholder serves as the visual hint —
+    // to the tokens. The input's placeholder serves as the visual hint —
     // there's no separate placeholder span anymore.
     expect(getInput()).toHaveAttribute('placeholder', 'Filter...');
   });
@@ -150,32 +150,32 @@ describe('FilterTokens popover', () => {
 // ── Pattern A trigger ───────────────────────────
 
 describe('FilterTokens Pattern A trigger', () => {
-  it('focuses the input when clicking empty wrapper space (not on a chip)', async () => {
+  it('focuses the input when clicking empty wrapper space (not on a token)', async () => {
     const user = userEvent.setup();
     render(<Setup initialValue={{ status: 'error' }} />);
     const wrapper = document.querySelector(
       '[data-slot="filter-tokens-trigger"]',
     ) as HTMLElement;
     expect(wrapper).not.toBeNull();
-    // Click somewhere on the wrapper that isn't a chip / clear / input —
-    // the wrapper itself is fine since chips have their own bounding box.
+    // Click somewhere on the wrapper that isn't a token / clear / input —
+    // the wrapper itself is fine since tokens have their own bounding box.
     await user.click(wrapper);
     expect(getInput()).toHaveFocus();
   });
 
-  it('moves focus to the next chip after removing a middle chip', async () => {
+  it('moves focus to the next token after removing a middle token', async () => {
     const user = userEvent.setup();
     render(
       <Setup initialValue={{ status: 'error', tags: ['bug'], search: 'x' }} />,
     );
     // Three tokens; remove the middle one (Tags). Focus should land on
-    // the chip that's now at the same index — the Search chip.
+    // the token that's now at the same index — the Search token.
     await user.click(screen.getByLabelText('Remove Tags: Bug'));
     await flushFocus();
     expect(screen.getByLabelText('Search: x')).toHaveFocus();
   });
 
-  it('falls back to the input when removing the last chip', async () => {
+  it('falls back to the input when removing the last token', async () => {
     const user = userEvent.setup();
     render(<Setup initialValue={{ status: 'error' }} />);
     await user.click(screen.getByLabelText('Remove Status: Error'));
@@ -183,7 +183,7 @@ describe('FilterTokens Pattern A trigger', () => {
     expect(getInput()).toHaveFocus();
   });
 
-  it('ArrowLeft from an empty input focuses the last chip', async () => {
+  it('ArrowLeft from an empty input focuses the last token', async () => {
     const user = userEvent.setup();
     render(<Setup initialValue={{ status: 'error', tags: ['bug'] }} />);
     const input = getInput();
@@ -194,24 +194,24 @@ describe('FilterTokens Pattern A trigger', () => {
     expect(screen.getByLabelText('Tags: Bug')).toHaveFocus();
   });
 
-  it('ArrowLeft / ArrowRight navigate between chips, ArrowRight from last returns to input', async () => {
+  it('ArrowLeft / ArrowRight navigate between tokens, ArrowRight from last returns to input', async () => {
     const user = userEvent.setup();
     render(<Setup initialValue={{ status: 'error', tags: ['bug'] }} />);
     const input = getInput();
     await act(async () => { input.focus(); });
-    await user.keyboard('{ArrowLeft}'); // → last chip (Tags)
+    await user.keyboard('{ArrowLeft}'); // → last token (Tags)
     expect(screen.getByLabelText('Tags: Bug')).toHaveFocus();
-    await user.keyboard('{ArrowLeft}'); // → previous chip (Status)
+    await user.keyboard('{ArrowLeft}'); // → previous token (Status)
     expect(
       screen.getByLabelText('Status: Error'),
     ).toHaveFocus();
-    await user.keyboard('{ArrowRight}'); // → next chip (Tags)
+    await user.keyboard('{ArrowRight}'); // → next token (Tags)
     expect(screen.getByLabelText('Tags: Bug')).toHaveFocus();
-    await user.keyboard('{ArrowRight}'); // → input (last chip → input)
+    await user.keyboard('{ArrowRight}'); // → input (last token → input)
     expect(input).toHaveFocus();
   });
 
-  it('Escape on a focused chip returns focus to the input', async () => {
+  it('Escape on a focused token returns focus to the input', async () => {
     const user = userEvent.setup();
     render(<Setup initialValue={{ status: 'error' }} />);
     const chip = screen.getByLabelText('Status: Error');
@@ -221,7 +221,7 @@ describe('FilterTokens Pattern A trigger', () => {
     expect(getInput()).toHaveFocus();
   });
 
-  it('Backspace on a focused chip removes that chip', async () => {
+  it('Backspace on a focused token removes that token', async () => {
     const user = userEvent.setup();
     render(<Setup initialValue={{ status: 'error', tags: ['bug'] }} />);
     const tagsChip = screen.getByLabelText('Tags: Bug');

@@ -90,7 +90,7 @@ function FilterTokens<const T extends FilterSchema>({
           onCloseAutoFocus={(e) => e.preventDefault()}
           onInteractOutside={(e) => {
             // The combobox input lives in the trigger area, not in the popover
-            // content. When focus moves to it (after a chip click or option
+            // content. When focus moves to it (after a token click or option
             // selection), Radix would otherwise treat that as an outside
             // interaction and close. Keep it open for any interaction inside
             // our trigger surface.

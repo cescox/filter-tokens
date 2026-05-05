@@ -4,7 +4,7 @@ import * as React from "react";
 import { XIcon } from "lucide-react";
 import type { FilterSchema, FilterTokensReturn } from "filter-tokens";
 import { cn } from "filter-tokens/lib/utils";
-import { Chip } from "./chip";
+import { Token } from "./token";
 
 export interface TriggerProps<T extends FilterSchema> {
   ft: FilterTokensReturn<T>;
@@ -24,27 +24,27 @@ export function Trigger<T extends FilterSchema>({
   disabled,
   className,
 }: TriggerProps<T>) {
-  const chipRefs = React.useRef<(HTMLSpanElement | null)[]>([]);
+  const tokenRefs = React.useRef<(HTMLSpanElement | null)[]>([]);
 
   const state = ft.dropdown.state;
   const isPanelMode =
     state.mode === "input" &&
     (state.inputType === "date" || state.inputType === "number");
 
-  // When the popover opens (via chip click, keyboard, or programmatic open()),
+  // When the popover opens (via token click, keyboard, or programmatic open()),
   // make sure focus lands on our outer input — except in date/number entry
   // where the panel manages its own focus, and except when focus has
-  // intentionally moved to a chip (ArrowLeft chip nav). Without the
-  // chip-aware guard, the rAF would yank focus back to the input every
+  // intentionally moved to a token (ArrowLeft token nav). Without the
+  // token-aware guard, the rAF would yank focus back to the input every
   // time mode changes.
   React.useEffect(() => {
     if (ft.dropdown.isOpen && !isPanelMode) {
       requestAnimationFrame(() => {
         const active = document.activeElement;
-        const onChip = active?.closest?.(
+        const onToken = active?.closest?.(
           '[data-slot="filter-tokens-token"]',
         );
-        if (onChip) return;
+        if (onToken) return;
         ft.inputProps.ref.current?.focus();
       });
     }
@@ -95,10 +95,10 @@ export function Trigger<T extends FilterSchema>({
         onMouseDown={handleWrapperMouseDown}
       >
         {ft.tokens.map((token, index) => (
-          <Chip
+          <Token
             key={token.id}
             ref={(el) => {
-              chipRefs.current[index] = el;
+              tokenRefs.current[index] = el;
             }}
             category={token.category}
             label={token.label}
@@ -110,28 +110,28 @@ export function Trigger<T extends FilterSchema>({
               const expectedCount = ft.tokens.length - 1;
               token.remove();
               requestAnimationFrame(() => {
-                const nextChip =
+                const nextToken =
                   removeIndex < expectedCount
-                    ? chipRefs.current[removeIndex]
+                    ? tokenRefs.current[removeIndex]
                     : null;
-                const prevChip =
+                const prevToken =
                   removeIndex > 0
-                    ? chipRefs.current[removeIndex - 1]
+                    ? tokenRefs.current[removeIndex - 1]
                     : null;
-                (nextChip ?? prevChip ?? ft.inputProps.ref.current)?.focus();
+                (nextToken ?? prevToken ?? ft.inputProps.ref.current)?.focus();
               });
             }}
-            onClick={() => ft.dropdown.openFilter(token.category)}
+            onClick={() => ft.dropdown.openFilter(token.category as keyof T & string)}
             onPrevious={
               index > 0
-                ? () => chipRefs.current[index - 1]?.focus()
+                ? () => tokenRefs.current[index - 1]?.focus()
                 : undefined
             }
             onNext={() => {
               if (index < ft.tokens.length - 1) {
-                chipRefs.current[index + 1]?.focus();
+                tokenRefs.current[index + 1]?.focus();
               } else {
-                // Last chip → step out into the input.
+                // Last token → step out into the input.
                 ft.inputProps.ref.current?.focus();
               }
             }}
@@ -159,7 +159,7 @@ export function Trigger<T extends FilterSchema>({
           }}
           onKeyDown={(e) => {
             // ArrowLeft on an empty input with the cursor at position 0:
-            // step into the chip strip, focusing the last chip. ArrowRight
+            // step into the token strip, focusing the last token. ArrowRight
             // / typing leaves the input behaviour intact.
             if (
               e.key === "ArrowLeft" &&
@@ -174,7 +174,7 @@ export function Trigger<T extends FilterSchema>({
               const end = el.selectionEnd ?? 0;
               if (start === 0 && end === 0) {
                 e.preventDefault();
-                chipRefs.current[ft.tokens.length - 1]?.focus();
+                tokenRefs.current[ft.tokens.length - 1]?.focus();
                 return;
               }
             }

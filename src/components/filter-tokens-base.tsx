@@ -75,7 +75,7 @@ function FilterTokens<const T extends FilterSchema>({
           return;
         }
         // The combobox input lives in the trigger area, not in the popover
-        // popup. When focus or pointer interactions land on it (after a chip
+        // popup. When focus or pointer interactions land on it (after a token
         // click, an option select, etc.), Base UI would otherwise treat that
         // as outside the popover and request close. Cancel any close that
         // originates from inside our trigger surface.

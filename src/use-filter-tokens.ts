@@ -87,7 +87,7 @@ function pickInitialDropdownState(
 
 /**
  * Returns the index of the currently-set option in the values list when
- * re-editing a select chip, so Enter doesn't silently overwrite the user's
+ * re-editing a select token, so Enter doesn't silently overwrite the user's
  * pick. Falls back to 0 for fresh selections, missing values, or async
  * options that haven't loaded yet.
  */
@@ -340,7 +340,7 @@ export function useFilterTokens<const T extends FilterSchema>(
     });
   }, [values]);
 
-  // ── aria-live announcements for chip add/remove ──
+  // ── aria-live announcements for token add/remove ──
 
   useEffect(() => {
     const prev = prevValueRef.current;
@@ -442,7 +442,7 @@ export function useFilterTokens<const T extends FilterSchema>(
   // Re-highlight when the user *types* a search (filtered list shifted) and
   // honour ArrowUp's "land on last item" intent. Do NOT reset on bare
   // mode/items.length changes — that would clobber the explicit highlight
-  // that selectCategory sets when re-editing an existing chip.
+  // that selectCategory sets when re-editing an existing token.
   useEffect(() => {
     if (openIntentRef.current === 'last' && items.length > 0) {
       openIntentRef.current = null;
@@ -582,8 +582,8 @@ export function useFilterTokens<const T extends FilterSchema>(
       e.preventDefault();
       goBack();
     } else if (e.key === 'Backspace' && !search && !e.nativeEvent.isComposing) {
-      // Single-press: remove the last chip directly. Matches Linear, Slack,
-      // Mantine TagsInput, and modern chip-input convention.
+      // Single-press: remove the last token directly. Matches Linear, Slack,
+      // Mantine TagsInput, and modern token-input convention.
       if (tokens.length > 0) tokens[tokens.length - 1].remove();
     }
   }
