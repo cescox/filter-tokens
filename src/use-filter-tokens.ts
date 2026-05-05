@@ -13,7 +13,7 @@ import type {
   DateRangePreset,
   DateSinglePreset,
 } from './types';
-import { resolveOptionsSync, buildTokens, findOptionLabel, formatDateShort } from './utils';
+import { resolveOptionsSync, buildTokens, findOptionLabel, formatFilterValue } from './utils';
 
 function optionsContentEqual(a: Option[], b: Option[]): boolean {
   if (a.length !== b.length) return false;
@@ -38,44 +38,6 @@ const parsePresetKey = (key: string): number | null => {
   return Number.isFinite(n) ? n : null;
 };
 
-function getValueDisplay(
-  def: FilterSchema[string],
-  val: unknown,
-  ctx: { filters: FilterValues<FilterSchema> },
-  locale?: string,
-): string {
-  if (val === undefined || val === null) return '';
-  if (def.type === 'select') {
-    const options = resolveOptionsSync(def.options, ctx);
-    if (def.multi && Array.isArray(val)) {
-      return (val as string[]).map((v) => findOptionLabel(options, v)).join(', ');
-    }
-    if (typeof val === 'string') return findOptionLabel(options, val);
-    return '';
-  }
-  if (def.type === 'text') {
-    return typeof val === 'string' ? val : '';
-  }
-  if (def.type === 'number') {
-    const n = val as { min?: number; max?: number };
-    const unit = def.unit || '';
-    if (n.min !== undefined && n.max !== undefined) return `${n.min}–${n.max}${unit}`;
-    if (n.min !== undefined) return `≥${n.min}${unit}`;
-    if (n.max !== undefined) return `≤${n.max}${unit}`;
-    return '';
-  }
-  if (def.type === 'date') {
-    const d = val as { date?: string; from?: string; to?: string };
-    const fmt = (s: string) => formatDateShort(s, locale);
-    if (d.from && d.to) return `${fmt(d.from)} – ${fmt(d.to)}`;
-    if (d.from) return `Since ${fmt(d.from)}`;
-    if (d.to) return `Until ${fmt(d.to)}`;
-    if (d.date) return fmt(d.date);
-    return '';
-  }
-  return '';
-}
-
 function diffAnnouncements(
   prev: Record<string, unknown>,
   next: Record<string, unknown>,
@@ -93,6 +55,8 @@ function diffAnnouncements(
     const n = next[key];
     if (p === n) continue;
 
+    // Multi-select diffs at the element level so we say "Added Status: Open"
+    // rather than re-announcing the entire selection on every toggle.
     if (def.type === 'select' && def.multi) {
       const pArr = (p as string[] | undefined) ?? [];
       const nArr = (n as string[] | undefined) ?? [];
@@ -106,8 +70,8 @@ function diffAnnouncements(
       continue;
     }
 
-    const pDisplay = getValueDisplay(def, p, ctx, locale);
-    const nDisplay = getValueDisplay(def, n, ctx, locale);
+    const pDisplay = formatFilterValue(def, p, ctx, locale);
+    const nDisplay = formatFilterValue(def, n, ctx, locale);
     if (p === undefined && n !== undefined) {
       if (nDisplay) out.push(`Added ${label}: ${nDisplay}`);
     } else if (p !== undefined && n === undefined) {
