@@ -207,6 +207,53 @@ import { fr } from "date-fns/locale";
 <FilterTokens filters={filters} value={value} onChange={setValue} dateLocale={fr} />
 ```
 
+## Messages (i18n)
+
+Every user-visible string — chip aria-labels, popup error/empty text, panel buttons, date/number labels, placeholders — is overridable via a `messages` prop. Defaults are English; pass a partial object with only the entries you want to change:
+
+```tsx
+import { fr } from "date-fns/locale";
+
+<FilterTokens
+  filters={filters}
+  value={value}
+  onChange={setValue}
+  dateLocale={fr}
+  messages={{
+    cancelLabel: "Annuler",
+    applyLabel: "Appliquer",
+    popupEmptyLabel: "Aucun résultat",
+    popupRetryLabel: "Réessayer",
+    typePlaceholder: (filter) => `Saisir ${filter}...`,
+    searchPlaceholder: (filter) => `Rechercher ${filter}...`,
+    tokenRemoveAria: (filter, value) => `Supprimer ${filter}: ${value}`,
+  }}
+/>
+```
+
+Same `messages` option is accepted by `useFilterTokens` for hook-only consumers. The resolved (merged-with-defaults) catalog is also exposed on `ft.messages`.
+
+**Naming convention** — every key reads as `[regionPrefix?][descriptor][roleSuffix]`:
+
+| Region prefix | Where it appears |
+|---|---|
+| `token*` | The visible filter pill |
+| `popup*` | The dropdown popover |
+| `date*` | The date entry panel |
+| `number*` | The number entry panel |
+| (no prefix) | Universals: `clearAllAria`, `cancelLabel`, `applyLabel`, `typePlaceholder`, `searchPlaceholder` |
+
+| Role suffix | What kind of string |
+|---|---|
+| `*Aria` | Accessible name (aria-label) |
+| `*Label` | Visible static text |
+| `*Format` | Template producing chip displayValue text |
+| `*Placeholder` | Input placeholder |
+| `*Announcement` | aria-live message |
+| `*Hint` | Inline visible help (may contain markup) |
+
+See `FilterTokensMessages` for the full type with JSDoc on every entry, or the `defaultMessages` export for the English defaults.
+
 ## Headless hook
 
 For custom UI:
