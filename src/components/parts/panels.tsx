@@ -22,13 +22,14 @@ export function Panels<T extends FilterSchema>({
   value,
   dateLocale,
 }: PanelsProps<T>) {
-  const { mode, category: activeCategory } = ft.dropdown.state;
-  if (!activeCategory) return null;
+  const state = ft.dropdown.state;
+  if (state.mode !== "input") return null;
+  const { category: activeCategory, inputType } = state;
 
   const activeDef = (filters as FilterSchema)[activeCategory];
   if (!activeDef) return null;
 
-  if (mode === "date-entry" && activeDef.type === "date") {
+  if (inputType === "date" && activeDef.type === "date") {
     const dateValue = (value as Record<string, unknown>)[activeCategory];
     return activeDef.range === true ? (
       <RangeCalendarPanel
@@ -49,7 +50,7 @@ export function Panels<T extends FilterSchema>({
     );
   }
 
-  if (mode === "number-entry" && activeDef.type === "number") {
+  if (inputType === "number" && activeDef.type === "number") {
     return (
       <NumberPanel
         unit={activeDef.unit}

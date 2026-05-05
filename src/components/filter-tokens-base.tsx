@@ -43,10 +43,14 @@ function FilterTokens<const T extends FilterSchema>({
   const listboxId = React.useId();
   const popoverContentId = React.useId();
 
-  const { mode, category: activeCategory } = ft.dropdown.state;
-  const isTextEntry = mode === "text-entry";
-  const isDateEntry = mode === "date-entry";
-  const isPanelMode = isDateEntry || mode === "number-entry";
+  const state = ft.dropdown.state;
+  const isInput = state.mode === "input";
+  const inputType = isInput ? state.inputType : null;
+  const activeCategory =
+    state.mode === "values" || state.mode === "input" ? state.category : null;
+  const isTextEntry = inputType === "text";
+  const isDateEntry = inputType === "date";
+  const isPanelMode = inputType === "date" || inputType === "number";
 
   const activeDef = activeCategory
     ? (filters as FilterSchema)[activeCategory]
@@ -100,7 +104,8 @@ function FilterTokens<const T extends FilterSchema>({
           <Popover.Popup
             id={popoverContentId}
             data-slot="filter-tokens-dropdown"
-            data-state={mode}
+            data-mode={state.mode}
+            data-input-type={inputType ?? undefined}
             className="max-w-[480px] min-w-(--anchor-width) rounded-lg border border-border bg-popover p-0 text-popover-foreground shadow-lg outline-none"
             initialFocus={false}
             finalFocus={ft.inputProps.ref}

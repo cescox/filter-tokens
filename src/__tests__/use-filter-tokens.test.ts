@@ -159,7 +159,7 @@ describe('useFilterTokens', () => {
       act(() => result.current.inputProps.onFocus());
       const searchItem = result.current.dropdown.items[3];
       act(() => result.current.dropdown.select(searchItem));
-      expect(result.current.dropdown.state.mode).toBe('text-entry');
+      expect(result.current.dropdown.state).toMatchObject({ mode: 'input', inputType: 'text' });
     });
 
     it('closes on close()', () => {
@@ -324,7 +324,7 @@ describe('useFilterTokens', () => {
     it('pre-fills input with current text value on openCategory', () => {
       const { result } = setup({ search: 'timeout' });
       act(() => result.current.openCategory('search'));
-      expect(result.current.dropdown.state.mode).toBe('text-entry');
+      expect(result.current.dropdown.state).toMatchObject({ mode: 'input', inputType: 'text' });
       expect(result.current.inputProps.value).toBe('timeout');
     });
 
@@ -356,19 +356,19 @@ describe('useFilterTokens', () => {
       act(() => result.current.dropdown.select(periodItem!));
       const customItem = result.current.dropdown.items.find((i) => i.key === '__custom_date__');
       act(() => result.current.dropdown.select(customItem!));
-      expect(result.current.dropdown.state.mode).toBe('date-entry');
+      expect(result.current.dropdown.state).toMatchObject({ mode: 'input', inputType: 'date' });
     });
 
     it('goes to date-entry when clicking date pill with custom value', () => {
       const { result } = setup({ period: { from: '2026-04-05T00:00:00Z', to: '2026-04-15T23:59:59Z' } });
       act(() => result.current.openCategory('period'));
-      expect(result.current.dropdown.state.mode).toBe('date-entry');
+      expect(result.current.dropdown.state).toMatchObject({ mode: 'input', inputType: 'date' });
     });
 
     it('goes back to presets from date-entry when presets exist', () => {
       const { result } = setup({ period: { from: '2026-04-05T00:00:00Z', to: '2026-04-15T23:59:59Z' } });
       act(() => result.current.openCategory('period'));
-      expect(result.current.dropdown.state.mode).toBe('date-entry');
+      expect(result.current.dropdown.state).toMatchObject({ mode: 'input', inputType: 'date' });
       act(() => result.current.dropdown.goBack());
       expect(result.current.dropdown.state.mode).toBe('values');
       expect(result.current.dropdown.items.length).toBeGreaterThan(1);
@@ -387,7 +387,7 @@ describe('useFilterTokens', () => {
       );
       act(() => result.current.inputProps.onFocus());
       act(() => result.current.dropdown.select(result.current.dropdown.items[0]));
-      expect(result.current.dropdown.state.mode).toBe('date-entry');
+      expect(result.current.dropdown.state).toMatchObject({ mode: 'input', inputType: 'date' });
     });
 
     it('stores preset label and shows it in token', () => {
@@ -432,7 +432,7 @@ describe('useFilterTokens', () => {
       act(() => result.current.inputProps.onFocus());
       const searchItem = result.current.dropdown.items.find((i) => i.key === 'search');
       act(() => result.current.dropdown.select(searchItem!));
-      expect(result.current.dropdown.state.mode).toBe('text-entry');
+      expect(result.current.dropdown.state).toMatchObject({ mode: 'input', inputType: 'text' });
       act(() => result.current.dropdown.goBack());
       expect(result.current.dropdown.state.mode).toBe('categories');
     });
@@ -692,7 +692,7 @@ describe('useFilterTokens', () => {
       act(() => result.current.inputProps.onFocus());
       const amountItem = result.current.dropdown.items.find((i) => i.key === 'amount');
       act(() => result.current.dropdown.select(amountItem!));
-      expect(result.current.dropdown.state.mode).toBe('number-entry');
+      expect(result.current.dropdown.state).toMatchObject({ mode: 'input', inputType: 'number' });
     });
 
     it('derives token from number value with min and max', () => {
@@ -714,7 +714,7 @@ describe('useFilterTokens', () => {
     it('sets number value and closes the popover (Apply commits and dismisses)', () => {
       const { result, onChange } = setup();
       act(() => result.current.openCategory('amount'));
-      expect(result.current.dropdown.state.mode).toBe('number-entry');
+      expect(result.current.dropdown.state).toMatchObject({ mode: 'input', inputType: 'number' });
       act(() => {
         result.current.setNumberValue('amount', { min: 10, max: 500 });
       });
@@ -725,7 +725,7 @@ describe('useFilterTokens', () => {
     it('goes back from number-entry to categories', () => {
       const { result } = setup();
       act(() => result.current.openCategory('amount'));
-      expect(result.current.dropdown.state.mode).toBe('number-entry');
+      expect(result.current.dropdown.state).toMatchObject({ mode: 'input', inputType: 'number' });
       act(() => result.current.dropdown.goBack());
       expect(result.current.dropdown.state.mode).toBe('categories');
     });

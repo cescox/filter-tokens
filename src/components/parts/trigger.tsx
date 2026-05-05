@@ -26,9 +26,10 @@ export function Trigger<T extends FilterSchema>({
 }: TriggerProps<T>) {
   const chipRefs = React.useRef<(HTMLSpanElement | null)[]>([]);
 
+  const state = ft.dropdown.state;
   const isPanelMode =
-    ft.dropdown.state.mode === "date-entry" ||
-    ft.dropdown.state.mode === "number-entry";
+    state.mode === "input" &&
+    (state.inputType === "date" || state.inputType === "number");
 
   // When the popover opens (via chip click, keyboard, or programmatic open()),
   // make sure focus lands on our outer input — except in date/number entry
@@ -47,7 +48,7 @@ export function Trigger<T extends FilterSchema>({
         ft.inputProps.ref.current?.focus();
       });
     }
-  }, [ft.dropdown.open, ft.dropdown.state.mode, isPanelMode, ft.inputProps.ref]);
+  }, [ft.dropdown.open, state.mode, isPanelMode, ft.inputProps.ref]);
 
   const highlightedItem =
     ft.dropdown.highlightedIndex >= 0

@@ -4,6 +4,7 @@ import type {
   Option,
   OptionsOrFn,
   FilterContext,
+  Token,
 } from './types';
 
 export function resolveOptionsSync<T extends { value: string; label: string }>(
@@ -44,14 +45,8 @@ export function buildTokens(
   onRemove: (category: string) => void,
   dateLabels: Record<string, string> = {},
   locale?: string,
-) {
-  const tokens: {
-    id: string;
-    category: string;
-    label: string;
-    displayValue: string;
-    remove: () => void;
-  }[] = [];
+): Token[] {
+  const tokens: Token[] = [];
 
   for (const [key, def] of Object.entries(schema)) {
     const val = values[key];

@@ -42,10 +42,14 @@ function FilterTokens<const T extends FilterSchema>({
   const listboxId = React.useId();
   const popoverContentId = React.useId();
 
-  const { mode, category: activeCategory } = ft.dropdown.state;
-  const isTextEntry = mode === "text-entry";
-  const isDateEntry = mode === "date-entry";
-  const isPanelMode = isDateEntry || mode === "number-entry";
+  const state = ft.dropdown.state;
+  const isInput = state.mode === "input";
+  const inputType = isInput ? state.inputType : null;
+  const activeCategory =
+    state.mode === "values" || state.mode === "input" ? state.category : null;
+  const isTextEntry = inputType === "text";
+  const isDateEntry = inputType === "date";
+  const isPanelMode = inputType === "date" || inputType === "number";
 
   const activeDef = activeCategory
     ? (filters as FilterSchema)[activeCategory]
@@ -75,7 +79,8 @@ function FilterTokens<const T extends FilterSchema>({
         <PopoverPrimitive.Content
           id={popoverContentId}
           data-slot="filter-tokens-dropdown"
-          data-state={mode}
+          data-mode={state.mode}
+          data-input-type={inputType ?? undefined}
           align="start"
           sideOffset={4}
           className="z-50 max-w-[480px] min-w-(--radix-popover-trigger-width) rounded-lg border border-border bg-popover p-0 text-popover-foreground shadow-lg outline-none"
@@ -100,12 +105,12 @@ function FilterTokens<const T extends FilterSchema>({
             // second time (values → categories → close).
             //
             // To make ESC behave correctly:
-            //  - In sub-modes (values / text-entry / panel): goBack here and
-            //    preventDefault so Radix doesn't dismiss. The hook then
-            //    short-circuits because e.defaultPrevented === true.
+            //  - In sub-modes (values / input): goBack here and preventDefault
+            //    so Radix doesn't dismiss. The hook then short-circuits
+            //    because e.defaultPrevented === true.
             //  - In categories mode: do nothing here — let Radix's default
             //    dismiss path run (calls onOpenChange(false)), which closes.
-            if (mode === "values" || mode === "text-entry" || isPanelMode) {
+            if (state.mode === "values" || state.mode === "input") {
               e.preventDefault();
               ft.dropdown.goBack();
             }

@@ -7,14 +7,13 @@ import type {
   UseFilterTokensOptions,
   FilterTokensReturn,
   DropdownItem,
+  DropdownState,
   Token,
   Option,
   DateRangePreset,
   DateSinglePreset,
 } from './types';
 import { resolveOptionsSync, buildTokens, findOptionLabel, formatDateShort } from './utils';
-
-const noop = () => {};
 
 function optionsContentEqual(a: Option[], b: Option[]): boolean {
   if (a.length !== b.length) return false;
@@ -108,7 +107,8 @@ function diffAnnouncements(
   return out;
 }
 
-type Mode = 'closed' | 'categories' | 'values' | 'text-entry' | 'date-entry' | 'number-entry';
+type Mode = 'closed' | 'categories' | 'values' | 'input';
+type InputType = 'text' | 'date' | 'number';
 
 export function useFilterTokens<const T extends FilterSchema>(
   options: UseFilterTokensOptions<T>,
@@ -123,6 +123,7 @@ export function useFilterTokens<const T extends FilterSchema>(
   // ── State ──────────────────────────────────
 
   const [mode, setMode] = useState<Mode>('closed');
+  const [inputType, setInputType] = useState<InputType | null>(null);
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [search, setSearch] = useState('');
   const [highlightedIndex, setHighlightedIndex] = useState(-1);
@@ -148,6 +149,7 @@ export function useFilterTokens<const T extends FilterSchema>(
 
   function openCategories() {
     setMode('categories');
+    setInputType(null);
     setActiveCategory(null);
     setHighlightedIndex(-1);
     setSearch('');
@@ -158,7 +160,8 @@ export function useFilterTokens<const T extends FilterSchema>(
     if (!def) return;
 
     if (def.type === 'text') {
-      setMode('text-entry');
+      setMode('input');
+      setInputType('text');
       setActiveCategory(key);
       setHighlightedIndex(-1);
       const currentVal = values[key];
@@ -167,7 +170,8 @@ export function useFilterTokens<const T extends FilterSchema>(
     }
 
     if (def.type === 'number') {
-      setMode('number-entry');
+      setMode('input');
+      setInputType('number');
       setActiveCategory(key);
       setHighlightedIndex(-1);
       setSearch('');
@@ -175,7 +179,8 @@ export function useFilterTokens<const T extends FilterSchema>(
     }
 
     if (def.type === 'date' && (!def.presets?.length || (values[key] && !dateLabels[key]))) {
-      setMode('date-entry');
+      setMode('input');
+      setInputType('date');
       setActiveCategory(key);
       setHighlightedIndex(-1);
       setSearch('');
@@ -183,6 +188,7 @@ export function useFilterTokens<const T extends FilterSchema>(
     }
 
     setMode('values');
+    setInputType(null);
     setActiveCategory(key);
     setSearch('');
 
@@ -208,16 +214,17 @@ export function useFilterTokens<const T extends FilterSchema>(
   }
 
   function goBack() {
-    if (mode === 'date-entry' && activeCategory) {
+    if (mode === 'input' && inputType === 'date' && activeCategory) {
       const def = schema[activeCategory];
       if (def?.type === 'date' && def.presets?.length) {
         setMode('values');
+        setInputType(null);
         setHighlightedIndex(0);
         setSearch('');
         return;
       }
     }
-    if (mode === 'values' || mode === 'text-entry' || mode === 'date-entry' || mode === 'number-entry') {
+    if (mode === 'values' || mode === 'input') {
       openCategories();
       return;
     }
@@ -226,13 +233,10 @@ export function useFilterTokens<const T extends FilterSchema>(
 
   function close() {
     setMode('closed');
+    setInputType(null);
     setActiveCategory(null);
     setSearch('');
     setHighlightedIndex(-1);
-  }
-
-  function afterValueSelected() {
-    openCategories();
   }
 
   // ── Async options loading ──────────────────
@@ -451,7 +455,8 @@ export function useFilterTokens<const T extends FilterSchema>(
       next[activeCategory] = item.key;
     } else if (def.type === 'date' && def.presets) {
       if (item.key === '__custom_date__') {
-        setMode('date-entry');
+        setMode('input');
+        setInputType('date');
         setSearch('');
         return;
       }
@@ -471,7 +476,7 @@ export function useFilterTokens<const T extends FilterSchema>(
     }
 
     emitChange(next);
-    afterValueSelected();
+    openCategories();
   }
 
   // ── Keyboard handling ──────────────────────
@@ -485,11 +490,11 @@ export function useFilterTokens<const T extends FilterSchema>(
     // → closed).
     if (e.key === 'Escape' && e.defaultPrevented) return;
 
-    if (mode === 'text-entry' && activeCategory) {
+    if (mode === 'input' && inputType === 'text' && activeCategory) {
       if (e.key === 'Enter' && search.trim() && !e.nativeEvent.isComposing) {
         e.preventDefault();
         emitChange({ ...values, [activeCategory]: search.trim() });
-        afterValueSelected();
+        openCategories();
       } else if (e.key === 'Escape') {
         e.preventDefault();
         goBack();
@@ -497,7 +502,7 @@ export function useFilterTokens<const T extends FilterSchema>(
       return;
     }
 
-    if (mode === 'date-entry' || mode === 'number-entry') {
+    if (mode === 'input' && (inputType === 'date' || inputType === 'number')) {
       if (e.key === 'Escape') { e.preventDefault(); goBack(); }
       return;
     }
@@ -551,8 +556,9 @@ export function useFilterTokens<const T extends FilterSchema>(
     // Typing in a panel mode (date / number) means the user is searching for
     // a different filter, not entering panel data. Bounce back to categories
     // so the typed text actually drives a visible search.
-    if (mode === 'closed' || mode === 'date-entry' || mode === 'number-entry') {
+    if (mode === 'closed' || (mode === 'input' && inputType !== 'text')) {
       setMode('categories');
+      setInputType(null);
       setActiveCategory(null);
     }
   }
@@ -561,21 +567,23 @@ export function useFilterTokens<const T extends FilterSchema>(
     if (mode === 'closed') openCategories();
   }
 
-  // ── ARIA ───────────────────────────────────
-
-  const highlightedId = isOpen && items[highlightedIndex]
-    ? `filter-tokens-item-${items[highlightedIndex].key}`
-    : undefined;
-
   // ── Return ─────────────────────────────────
 
-  const inputPlaceholder = mode === 'text-entry' && activeCategory
+  const inputPlaceholder = mode === 'input' && inputType === 'text' && activeCategory
     ? (schema[activeCategory]?.type === 'text'
         ? (schema[activeCategory] as { placeholder?: string }).placeholder
         : undefined) ?? `Type ${schema[activeCategory]?.label}...`
     : mode === 'values' && activeCategory && schema[activeCategory]
       ? `Search ${schema[activeCategory].label}...`
       : placeholder;
+
+  // Project internal state into the public discriminated union. The branches
+  // mirror the invariants enforced by the transition helpers above.
+  const dropdownState: DropdownState =
+    mode === 'closed' ? { mode: 'closed' } :
+    mode === 'categories' ? { mode: 'categories' } :
+    mode === 'values' ? { mode: 'values', category: activeCategory! } :
+    { mode: 'input', category: activeCategory!, inputType: inputType! };
 
   return {
     tokens,
@@ -586,12 +594,17 @@ export function useFilterTokens<const T extends FilterSchema>(
       onChange: handleInputChange,
       onKeyDown: handleKeyDown,
       onFocus: handleFocus,
-      onBlur: noop,
+      onBlur: () => {},
       placeholder: inputPlaceholder,
       role: 'combobox' as const,
       'aria-expanded': isOpen,
+      // Default to 'listbox'; consumers rendering a panel-style popup
+      // (e.g. a date picker) should override to 'dialog'.
       'aria-haspopup': 'listbox' as const,
-      'aria-activedescendant': highlightedId,
+      // Left undefined here because the hook can't know the consumer's
+      // listbox ID scheme. Compose with `dropdown.highlightedItem` if you
+      // want the standard `${listboxId}-item-${key}` form.
+      'aria-activedescendant': undefined,
       'aria-autocomplete': 'list' as const,
     },
     dropdown: {
@@ -604,16 +617,14 @@ export function useFilterTokens<const T extends FilterSchema>(
       close,
       goBack,
       highlightedIndex,
+      highlightedItem: items[highlightedIndex] ?? null,
       setHighlightedIndex,
-      state: {
-        mode,
-        category: activeCategory,
-      },
+      state: dropdownState,
     },
     open: () => { if (mode === 'closed') openCategories(); },
     openCategory: (key: string) => { selectCategory(key); },
     clear: () => { emitChange({}); setDateLabels({}); close(); },
-    setDateValue: (category: string, dateValue: { from: string; to?: string } | { date: string }) => {
+    setDateValue: (category: string, dateValue: { from?: string; to?: string } | { date: string }) => {
       setDateLabels((prev) => { const n = { ...prev }; delete n[category]; return n; });
       emitChange({ ...values, [category]: dateValue });
       // Close after Apply: configuring a custom date is a deliberate

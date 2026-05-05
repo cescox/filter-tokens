@@ -117,10 +117,11 @@ export interface DropdownItem {
   type: 'category' | 'value';
 }
 
-export interface DropdownState {
-  mode: 'closed' | 'categories' | 'values' | 'text-entry' | 'date-entry' | 'number-entry';
-  category: string | null;
-}
+export type DropdownState =
+  | { mode: 'closed' }
+  | { mode: 'categories' }
+  | { mode: 'values'; category: string }
+  | { mode: 'input'; category: string; inputType: 'text' | 'date' | 'number' };
 
 // ── Hook return ────────────────────────────
 
@@ -134,7 +135,7 @@ export interface InputProps {
   placeholder: string;
   role: 'combobox';
   'aria-expanded': boolean;
-  'aria-haspopup': 'listbox';
+  'aria-haspopup': 'listbox' | 'dialog';
   'aria-activedescendant': string | undefined;
   'aria-autocomplete': 'list';
 }
@@ -149,6 +150,12 @@ export interface Dropdown {
   close: () => void;
   goBack: () => void;
   highlightedIndex: number;
+  /**
+   * The item at `highlightedIndex`, or null when nothing is highlighted.
+   * Convenient for composing `aria-activedescendant`:
+   * `aria-activedescendant={ft.dropdown.highlightedItem ? ${listboxId}-item-${ft.dropdown.highlightedItem.key} : undefined}`
+   */
+  highlightedItem: DropdownItem | null;
   setHighlightedIndex: (index: number) => void;
   state: DropdownState;
 }
