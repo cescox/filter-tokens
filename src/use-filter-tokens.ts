@@ -2,8 +2,11 @@
 
 import { useState, useRef, useMemo, useEffect } from 'react';
 import type {
+  FilterContext,
+  FilterDef,
   FilterSchema,
   FilterValues,
+  SelectFilterDef,
   UseFilterTokensOptions,
   FilterTokensReturn,
   FilterTokensDropdownItem,
@@ -37,6 +40,66 @@ const parsePresetKey = (key: string): number | null => {
   const n = parseInt(key.slice(PRESET_KEY_PREFIX.length), 10);
   return Number.isFinite(n) ? n : null;
 };
+
+/**
+ * Picks the dropdown state and search seed produced by drilling into a
+ * filter category. Pure — given the schema entry and current filter
+ * values, decides whether to land on the values list (select / date with
+ * presets) or jump straight into the input panel (text / number / date
+ * without presets / re-editing a custom date). The select-list highlight
+ * index is computed by the caller because it depends on async option
+ * data the hook owns.
+ */
+function pickInitialDropdownState(
+  key: string,
+  def: FilterDef,
+  values: Record<string, unknown>,
+  dateLabels: Record<string, string>,
+): { state: FilterTokensDropdownState; search: string } {
+  if (def.type === 'text') {
+    const currentVal = values[key];
+    return {
+      state: { mode: 'input', category: key, inputType: 'text' },
+      search: typeof currentVal === 'string' ? currentVal : '',
+    };
+  }
+  if (def.type === 'number') {
+    return { state: { mode: 'input', category: key, inputType: 'number' }, search: '' };
+  }
+  // Date with no presets, or re-editing a custom (non-preset) date value:
+  // skip the preset list and open the calendar straight away.
+  if (def.type === 'date' && (!def.presets?.length || (values[key] && !dateLabels[key]))) {
+    return { state: { mode: 'input', category: key, inputType: 'date' }, search: '' };
+  }
+  return { state: { mode: 'values', category: key }, search: '' };
+}
+
+/**
+ * Returns the index of the currently-set option in the values list when
+ * re-editing a select chip, so Enter doesn't silently overwrite the user's
+ * pick. Falls back to 0 for fresh selections, missing values, or async
+ * options that haven't loaded yet.
+ */
+function findCurrentSelectIndex(
+  def: SelectFilterDef,
+  currentVal: unknown,
+  cachedAsyncOptions: FilterTokensOption[] | undefined,
+  ctx: FilterContext,
+): number {
+  const opts =
+    typeof def.options === 'function'
+      ? cachedAsyncOptions ?? []
+      : resolveOptionsSync(def.options, ctx);
+  if (def.multi && Array.isArray(currentVal) && currentVal.length > 0) {
+    const idx = opts.findIndex((o) => (currentVal as string[]).includes(o.value));
+    return idx >= 0 ? idx : 0;
+  }
+  if (typeof currentVal === 'string') {
+    const idx = opts.findIndex((o) => o.value === currentVal);
+    return idx >= 0 ? idx : 0;
+  }
+  return 0;
+}
 
 function diffAnnouncements(
   prev: Record<string, unknown>,
@@ -137,50 +200,18 @@ export function useFilterTokens<const T extends FilterSchema>(
     const def = schema[key];
     if (!def) return;
 
-    if (def.type === 'text') {
-      setState({ mode: 'input', category: key, inputType: 'text' });
+    const { state: nextState, search: nextSearch } =
+      pickInitialDropdownState(key, def, values, dateLabels);
+    setState(nextState);
+    setSearch(nextSearch);
+
+    // Only the values-list of a select can pre-highlight the current pick —
+    // input modes have no list and date presets are stateless actions.
+    if (nextState.mode === 'values' && def.type === 'select') {
+      setHighlightedIndex(findCurrentSelectIndex(def, values[key], asyncOptions[key], ctx));
+    } else {
       setHighlightedIndex(-1);
-      const currentVal = values[key];
-      setSearch(typeof currentVal === 'string' ? currentVal : '');
-      return;
     }
-
-    if (def.type === 'number') {
-      setState({ mode: 'input', category: key, inputType: 'number' });
-      setHighlightedIndex(-1);
-      setSearch('');
-      return;
-    }
-
-    if (def.type === 'date' && (!def.presets?.length || (values[key] && !dateLabels[key]))) {
-      setState({ mode: 'input', category: key, inputType: 'date' });
-      setHighlightedIndex(-1);
-      setSearch('');
-      return;
-    }
-
-    setState({ mode: 'values', category: key });
-    setSearch('');
-
-    // Highlight the currently-chosen value when re-editing a select chip,
-    // so Enter doesn't silently overwrite the user's pick. Falls back to 0
-    // for fresh selections / multi-select with no matching option in view.
-    let initialIndex = 0;
-    if (def.type === 'select') {
-      const currentVal = values[key];
-      const opts =
-        typeof def.options === 'function'
-          ? asyncOptions[key] ?? []
-          : resolveOptionsSync(def.options, ctx);
-      if (def.multi && Array.isArray(currentVal) && currentVal.length > 0) {
-        const idx = opts.findIndex((o) => (currentVal as string[]).includes(o.value));
-        if (idx >= 0) initialIndex = idx;
-      } else if (typeof currentVal === 'string') {
-        const idx = opts.findIndex((o) => o.value === currentVal);
-        if (idx >= 0) initialIndex = idx;
-      }
-    }
-    setHighlightedIndex(initialIndex);
   }
 
   function goBack() {
