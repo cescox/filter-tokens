@@ -182,6 +182,53 @@ describe('FilterTokens Pattern A trigger', () => {
     await flushFocus();
     expect(getInput()).toHaveFocus();
   });
+
+  it('ArrowLeft from an empty input focuses the last chip', async () => {
+    const user = userEvent.setup();
+    render(<Setup initialValue={{ status: 'error', tags: ['bug'] }} />);
+    const input = getInput();
+    await act(async () => {
+      input.focus();
+    });
+    await user.keyboard('{ArrowLeft}');
+    expect(screen.getByLabelText('Tags: Bug. Click to edit.')).toHaveFocus();
+  });
+
+  it('ArrowLeft / ArrowRight navigate between chips, ArrowRight from last returns to input', async () => {
+    const user = userEvent.setup();
+    render(<Setup initialValue={{ status: 'error', tags: ['bug'] }} />);
+    const input = getInput();
+    await act(async () => { input.focus(); });
+    await user.keyboard('{ArrowLeft}'); // → last chip (Tags)
+    expect(screen.getByLabelText('Tags: Bug. Click to edit.')).toHaveFocus();
+    await user.keyboard('{ArrowLeft}'); // → previous chip (Status)
+    expect(
+      screen.getByLabelText('Status: Error. Click to edit.'),
+    ).toHaveFocus();
+    await user.keyboard('{ArrowRight}'); // → next chip (Tags)
+    expect(screen.getByLabelText('Tags: Bug. Click to edit.')).toHaveFocus();
+    await user.keyboard('{ArrowRight}'); // → input (last chip → input)
+    expect(input).toHaveFocus();
+  });
+
+  it('Escape on a focused chip returns focus to the input', async () => {
+    const user = userEvent.setup();
+    render(<Setup initialValue={{ status: 'error' }} />);
+    const chip = screen.getByLabelText('Status: Error. Click to edit.');
+    chip.focus();
+    expect(chip).toHaveFocus();
+    await user.keyboard('{Escape}');
+    expect(getInput()).toHaveFocus();
+  });
+
+  it('Backspace on a focused chip removes that chip', async () => {
+    const user = userEvent.setup();
+    render(<Setup initialValue={{ status: 'error', tags: ['bug'] }} />);
+    const tagsChip = screen.getByLabelText('Tags: Bug. Click to edit.');
+    tagsChip.focus();
+    await user.keyboard('{Backspace}');
+    expect(getValue()).toEqual({ status: 'error' });
+  });
 });
 
 // ── Single Select Flow ──────────────────────────

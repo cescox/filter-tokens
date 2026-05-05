@@ -32,10 +32,20 @@ export function Trigger<T extends FilterSchema>({
 
   // When the popover opens (via chip click, keyboard, or programmatic open()),
   // make sure focus lands on our outer input — except in date/number entry
-  // where the panel manages its own focus.
+  // where the panel manages its own focus, and except when focus has
+  // intentionally moved to a chip (ArrowLeft chip nav). Without the
+  // chip-aware guard, the rAF would yank focus back to the input every
+  // time mode changes.
   React.useEffect(() => {
     if (ft.dropdown.open && !isPanelMode) {
-      requestAnimationFrame(() => ft.inputProps.ref.current?.focus());
+      requestAnimationFrame(() => {
+        const active = document.activeElement;
+        const onChip = active?.closest?.(
+          '[data-slot="filter-tokens-token"]',
+        );
+        if (onChip) return;
+        ft.inputProps.ref.current?.focus();
+      });
     }
   }, [ft.dropdown.open, ft.dropdown.state.mode, isPanelMode, ft.inputProps.ref]);
 
@@ -154,7 +164,12 @@ export function Trigger<T extends FilterSchema>({
               ft.tokens.length > 0
             ) {
               const el = e.currentTarget;
-              if (el.selectionStart === 0 && el.selectionEnd === 0) {
+              // selectionStart/End are 0 in real browsers and may be null in
+              // jsdom for an empty input — both signal "no selection / cursor
+              // at the start", which is the only state we step out for.
+              const start = el.selectionStart ?? 0;
+              const end = el.selectionEnd ?? 0;
+              if (start === 0 && end === 0) {
                 e.preventDefault();
                 chipRefs.current[ft.tokens.length - 1]?.focus();
                 return;
