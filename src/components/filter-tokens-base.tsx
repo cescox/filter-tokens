@@ -44,11 +44,9 @@ function FilterTokens<const T extends FilterSchema>({
   const popoverContentId = React.useId();
 
   const { mode, category: activeCategory } = ft.dropdown.state;
-  const isValuesMode = mode === "values";
   const isTextEntry = mode === "text-entry";
   const isDateEntry = mode === "date-entry";
-  const isNumberEntry = mode === "number-entry";
-  const isPanelMode = isDateEntry || isNumberEntry;
+  const isPanelMode = isDateEntry || mode === "number-entry";
 
   const activeDef = activeCategory
     ? (filters as FilterSchema)[activeCategory]
@@ -62,6 +60,14 @@ function FilterTokens<const T extends FilterSchema>({
       open={ft.dropdown.open}
       onOpenChange={(open, details) => {
         if (open) return;
+        // ESC: don't let Base UI close — the hook's handleKeyDown will run
+        // ESC logic against the input (goBack from values/text/date/number,
+        // close from categories). If we let Base UI close here, we'd skip
+        // the goBack-step-back behavior that's expected from a sub-mode.
+        if (details?.reason === "escape-key") {
+          details?.cancel?.();
+          return;
+        }
         // The combobox input lives in the trigger area, not in the popover
         // popup. When focus or pointer interactions land on it (after a chip
         // click, an option select, etc.), Base UI would otherwise treat that
@@ -98,13 +104,6 @@ function FilterTokens<const T extends FilterSchema>({
             className="max-w-[480px] min-w-(--anchor-width) rounded-lg border border-border bg-popover p-0 text-popover-foreground shadow-lg outline-none"
             initialFocus={false}
             finalFocus={ft.inputProps.ref}
-            onKeyDown={(e) => {
-              if (e.key === "Escape" && (isValuesMode || isTextEntry || isPanelMode)) {
-                e.preventDefault();
-                e.stopPropagation();
-                ft.dropdown.goBack();
-              }
-            }}
           >
             {activeLabel && (
               <Header

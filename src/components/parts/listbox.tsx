@@ -78,7 +78,7 @@ export function Listbox<T extends FilterSchema>({
             key={item.key}
             id={`${listboxId}-item-${item.key}`}
             role="option"
-            aria-selected={item.selected || isHighlighted}
+            aria-selected={item.selected}
             data-slot="filter-tokens-dropdown-item"
             data-type={item.type}
             data-highlighted={isHighlighted || undefined}

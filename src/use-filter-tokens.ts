@@ -126,7 +126,6 @@ export function useFilterTokens<const T extends FilterSchema>(
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [search, setSearch] = useState('');
   const [highlightedIndex, setHighlightedIndex] = useState(-1);
-  const [selectedTokenIndex, setSelectedTokenIndex] = useState<number | null>(null);
   const [asyncOptions, setAsyncOptions] = useState<Record<string, Option[]>>({});
   const [asyncLoading, setAsyncLoading] = useState(false);
   const [asyncError, setAsyncError] = useState<string | null>(null);
@@ -206,7 +205,6 @@ export function useFilterTokens<const T extends FilterSchema>(
     setActiveCategory(null);
     setSearch('');
     setHighlightedIndex(-1);
-    setSelectedTokenIndex(null);
   }
 
   function afterValueSelected() {
@@ -320,13 +318,6 @@ export function useFilterTokens<const T extends FilterSchema>(
     // eslint-disable-next-line react-hooks/exhaustive-deps — removeToken uses values via closure, but values is already a dep
     [schema, values, ctx, dateLabels, locale],
   );
-
-  // Clamp selectedTokenIndex when tokens shrink (e.g. parent removed a value)
-  useEffect(() => {
-    if (selectedTokenIndex !== null && selectedTokenIndex >= tokens.length) {
-      setSelectedTokenIndex(tokens.length > 0 ? tokens.length - 1 : null);
-    }
-  }, [tokens.length, selectedTokenIndex]);
 
   // ── Dropdown items ─────────────────────────
 
@@ -445,6 +436,14 @@ export function useFilterTokens<const T extends FilterSchema>(
   // ── Keyboard handling ──────────────────────
 
   function handleKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
+    // If an outer DismissableLayer (Radix's capture-phase listener, etc.)
+    // has already run and called preventDefault, treat ESC as already
+    // handled. React 19 may flush state updates between the capture-phase
+    // and bubble-phase, so without this guard the hook would re-process ESC
+    // against the *new* mode and double-advance (e.g., values → categories
+    // → closed).
+    if (e.key === 'Escape' && e.defaultPrevented) return;
+
     if (mode === 'text-entry' && activeCategory) {
       if (e.key === 'Enter' && search.trim() && !e.nativeEvent.isComposing) {
         e.preventDefault();
@@ -468,7 +467,13 @@ export function useFilterTokens<const T extends FilterSchema>(
       setHighlightedIndex((i) => Math.min(i + 1, items.length - 1));
     } else if (e.key === 'ArrowUp') {
       e.preventDefault();
-      if (isOpen) setHighlightedIndex((i) => Math.max(i - 1, 0));
+      if (!isOpen) {
+        // WAI-ARIA combobox: ArrowUp on a closed combobox opens the popup
+        // and lands on the *last* item (mirror of ArrowDown landing on first).
+        openCategories();
+        return;
+      }
+      setHighlightedIndex((i) => Math.max(i - 1, 0));
     } else if (e.key === 'Home') {
       if (isOpen && items.length > 0) {
         e.preventDefault();
@@ -486,19 +491,15 @@ export function useFilterTokens<const T extends FilterSchema>(
       e.preventDefault();
       goBack();
     } else if (e.key === 'Backspace' && !search && !e.nativeEvent.isComposing) {
-      if (selectedTokenIndex !== null) {
-        tokens[selectedTokenIndex]?.remove();
-        setSelectedTokenIndex(null);
-      } else if (tokens.length > 0) {
-        setSelectedTokenIndex(tokens.length - 1);
-      }
+      // Single-press: remove the last chip directly. Matches Linear, Slack,
+      // Mantine TagsInput, and modern chip-input convention.
+      if (tokens.length > 0) tokens[tokens.length - 1].remove();
     }
   }
 
   function handleInputChange(e: React.ChangeEvent<HTMLInputElement>) {
     const val = e.target.value;
     setSearch(val);
-    setSelectedTokenIndex(null);
     if (mode === 'closed') setMode('categories');
   }
 

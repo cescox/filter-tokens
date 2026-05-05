@@ -43,11 +43,9 @@ function FilterTokens<const T extends FilterSchema>({
   const popoverContentId = React.useId();
 
   const { mode, category: activeCategory } = ft.dropdown.state;
-  const isValuesMode = mode === "values";
   const isTextEntry = mode === "text-entry";
   const isDateEntry = mode === "date-entry";
-  const isNumberEntry = mode === "number-entry";
-  const isPanelMode = isDateEntry || isNumberEntry;
+  const isPanelMode = isDateEntry || mode === "number-entry";
 
   const activeDef = activeCategory
     ? (filters as FilterSchema)[activeCategory]
@@ -95,7 +93,19 @@ function FilterTokens<const T extends FilterSchema>({
             }
           }}
           onEscapeKeyDown={(e) => {
-            if (isValuesMode || isTextEntry || isPanelMode) {
+            // Radix's escape listener fires in document capture phase, so it
+            // runs *before* the hook's handleKeyDown (which is the input's
+            // onKeyDown bubble). React 19 flushes setState between phases,
+            // which means the hook would see the *new* mode and advance a
+            // second time (values → categories → close).
+            //
+            // To make ESC behave correctly:
+            //  - In sub-modes (values / text-entry / panel): goBack here and
+            //    preventDefault so Radix doesn't dismiss. The hook then
+            //    short-circuits because e.defaultPrevented === true.
+            //  - In categories mode: do nothing here — let Radix's default
+            //    dismiss path run (calls onOpenChange(false)), which closes.
+            if (mode === "values" || mode === "text-entry" || isPanelMode) {
               e.preventDefault();
               ft.dropdown.goBack();
             }

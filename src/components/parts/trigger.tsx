@@ -119,6 +119,12 @@ export function Trigger<T extends FilterSchema>({
           disabled={disabled}
           aria-controls={ft.dropdown.open ? listboxId : undefined}
           aria-activedescendant={activeDescendantId}
+          onClick={() => {
+            // Focus alone won't reopen the popover after ESC-from-categories
+            // (the input keeps focus, so onFocus doesn't re-fire). A click
+            // on the input bar always opens.
+            if (!disabled && !ft.dropdown.open) ft.open();
+          }}
           className="flex-1 min-w-[120px] border-0 bg-transparent p-0 text-sm outline-none placeholder:text-muted-foreground"
         />
 
@@ -132,6 +138,10 @@ export function Trigger<T extends FilterSchema>({
             onClick={(e) => {
               e.stopPropagation();
               ft.clear();
+              // ft.clear() closes the popover and removes the clear button
+              // itself, so DOM focus would otherwise fall to <body>. Move
+              // focus back to the input so the user can keep typing.
+              ft.inputProps.ref.current?.focus();
             }}
             aria-label="Clear all filters"
             disabled={disabled}

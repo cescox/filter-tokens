@@ -188,6 +188,13 @@ describe('useFilterTokens', () => {
       expect(result.current.dropdown.open).toBe(true);
     });
 
+    it('opens dropdown on ArrowUp when closed', () => {
+      // WAI-ARIA combobox: both ArrowDown and ArrowUp open a closed popup.
+      const { result } = setup();
+      keyDown(result, 'ArrowUp');
+      expect(result.current.dropdown.open).toBe(true);
+    });
+
     it('navigates highlighted index with arrows', () => {
       const { result } = setup();
       act(() => result.current.inputProps.onFocus());
@@ -605,7 +612,7 @@ describe('useFilterTokens', () => {
     });
   });
 
-  describe('backspace token selection', () => {
+  describe('backspace token removal', () => {
     function keyDown(result: any, key: string, opts?: { isComposing?: boolean }) {
       act(() => {
         result.current.inputProps.onKeyDown({
@@ -616,35 +623,29 @@ describe('useFilterTokens', () => {
       });
     }
 
-    it('selects last token on first Backspace, removes on second', () => {
+    it('removes the last token on Backspace when input is empty', () => {
+      // Single-press: matches Linear / Slack / Mantine TagsInput.
       const { result, onChange } = setup({ status: 'error', search: 'test' });
       act(() => result.current.inputProps.onFocus());
       keyDown(result, 'Backspace');
-      // First backspace selects last token (not removed yet)
-      expect(onChange).not.toHaveBeenCalled();
-      keyDown(result, 'Backspace');
-      // Second backspace removes it
+      // `tokens` order is the schema order: status (index 0), search (index 1).
+      // The last token (search) must be the one removed.
       expect(onChange).toHaveBeenCalledWith({ status: 'error' });
     });
 
-    it('clamps selectedTokenIndex when tokens shrink externally', async () => {
-      const { result, rerender } = setup({ status: 'error', search: 'test' });
+    it('does nothing when there are no tokens', () => {
+      const { result, onChange } = setup();
       act(() => result.current.inputProps.onFocus());
-      // Select last token (index 1)
-      keyDown(result, 'Backspace');
-      // Parent removes a value out-of-band — tokens.length goes from 2 to 1
-      rerender({ value: { status: 'error' } });
-      // selectedTokenIndex must clamp to valid range; Backspace must not crash
       expect(() => keyDown(result, 'Backspace')).not.toThrow();
+      expect(onChange).not.toHaveBeenCalled();
     });
 
     it('does NOT remove a token when Backspace fires during IME composition', () => {
       const { result, onChange } = setup({ status: 'error' });
       act(() => result.current.inputProps.onFocus());
-      // Two consecutive Backspaces would normally select then remove. With
-      // isComposing=true both must be no-ops so that Korean/Japanese/etc.
-      // input composition can use Backspace to delete composing characters.
-      keyDown(result, 'Backspace', { isComposing: true });
+      // With isComposing=true the Backspace must be a no-op so that
+      // Korean/Japanese/etc. input composition can use Backspace to delete
+      // composing characters without losing the last chip.
       keyDown(result, 'Backspace', { isComposing: true });
       expect(onChange).not.toHaveBeenCalled();
     });
