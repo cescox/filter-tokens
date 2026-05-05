@@ -265,9 +265,9 @@ The component uses shadcn CSS variables for theming and `data-slot` attributes o
 />
 ```
 
-Available slots: `filter-tokens`, `filter-tokens-trigger`, `filter-tokens-token`, `filter-tokens-token-label`, `filter-tokens-token-value`, `filter-tokens-token-remove`, `filter-tokens-placeholder`, `filter-tokens-clear`, `filter-tokens-search`, `filter-tokens-dropdown`, `filter-tokens-dropdown-header`, `filter-tokens-dropdown-item`, `filter-tokens-loading`, `filter-tokens-error`, `filter-tokens-empty`, `filter-tokens-calendar`, `filter-tokens-number`, `filter-tokens-date-input`.
+Available slots: `filter-tokens`, `filter-tokens-announcement`, `filter-tokens-trigger`, `filter-tokens-input`, `filter-tokens-token`, `filter-tokens-token-label`, `filter-tokens-token-value`, `filter-tokens-token-remove`, `filter-tokens-clear`, `filter-tokens-dropdown`, `filter-tokens-dropdown-header`, `filter-tokens-dropdown-item`, `filter-tokens-loading`, `filter-tokens-error`, `filter-tokens-empty`, `filter-tokens-text-entry-hint`, `filter-tokens-calendar`, `filter-tokens-number`, `filter-tokens-date-input`.
 
-State attributes: `data-highlighted`, `data-selected`, `data-category`, `data-type`, `data-disabled`, `data-state`.
+State attributes: `data-highlighted`, `data-selected`, `data-category`, `data-kind`, `data-disabled`, `data-mode`, `data-input-type`.
 
 ## SSR / Next.js App Router
 
