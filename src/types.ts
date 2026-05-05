@@ -160,7 +160,7 @@ export interface FilterTokensInputProps {
   'aria-autocomplete': 'list';
 }
 
-export interface FilterTokensDropdown {
+export interface FilterTokensDropdown<T extends FilterSchema = FilterSchema> {
   isOpen: boolean;
   loading: boolean;
   error: string | null;
@@ -170,7 +170,7 @@ export interface FilterTokensDropdown {
   /** Open the popup at the top-level filter list (no-op when already open). */
   open: () => void;
   /** Open the popup directly into a specific filter's values (or its input panel). */
-  openFilter: (key: string) => void;
+  openFilter: (key: keyof T & string) => void;
   close: () => void;
   goBack: () => void;
   highlightedIndex: number;
@@ -193,7 +193,7 @@ export interface FilterTokensReturn<T extends FilterSchema> {
    */
   announcement: string;
   inputProps: FilterTokensInputProps;
-  dropdown: FilterTokensDropdown;
+  dropdown: FilterTokensDropdown<T>;
   /**
    * Resolved message catalog — defaults merged with the optional partial
    * passed via `useFilterTokens({ messages })`. Components and custom
@@ -204,9 +204,9 @@ export interface FilterTokensReturn<T extends FilterSchema> {
   /** Removes every filter and closes the popup. */
   clear: () => void;
   /** Commits a date value (called by the calendar panel's Apply button). */
-  applyDate: (category: string, value: { from?: string; to?: string } | { date: string }) => void;
+  applyDate: (category: keyof T & string, value: { from?: string; to?: string } | { date: string }) => void;
   /** Commits a number range (called by the number panel's Apply button). */
-  applyNumber: (category: string, value: { min?: number; max?: number }) => void;
+  applyNumber: (category: keyof T & string, value: { min?: number; max?: number }) => void;
 }
 
 // ── Messages (i18n / customization) ────────
