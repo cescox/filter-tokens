@@ -1,4 +1,5 @@
 export { useFilterTokens } from './use-filter-tokens';
+export { defaultMessages } from './lib/messages';
 export type {
   FilterSchema,
   FilterDef,
