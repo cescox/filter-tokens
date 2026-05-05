@@ -12,7 +12,7 @@ export interface FilterContext<T extends FilterSchema = FilterSchema> {
   filters: FilterValues<T>;
 }
 
-export type OptionsOrFn<T extends { value: string; label: string }> =
+export type OptionsOrFn<T extends FilterTokensOption = FilterTokensOption> =
   | readonly T[]
   | ((ctx: FilterContext) => T[])
   | ((ctx: FilterContext) => Promise<T[]>);

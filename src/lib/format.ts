@@ -8,7 +8,7 @@ import type {
   FilterTokensToken,
 } from '../types';
 
-export function resolveOptionsSync<T extends { value: string; label: string }>(
+export function resolveOptionsSync<T extends FilterTokensOption>(
   optionsOrFn: OptionsOrFn<T> | undefined,
   ctx: FilterContext,
 ): T[] {
