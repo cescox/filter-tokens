@@ -16,6 +16,14 @@ import { resolveOptionsSync, buildTokens } from './utils';
 
 const noop = () => {};
 
+function optionsContentEqual(a: Option[], b: Option[]): boolean {
+  if (a.length !== b.length) return false;
+  for (let i = 0; i < a.length; i++) {
+    if (a[i].value !== b[i].value || a[i].label !== b[i].label) return false;
+  }
+  return true;
+}
+
 type Mode = 'closed' | 'categories' | 'values' | 'text-entry' | 'date-entry' | 'number-entry';
 
 export function useFilterTokens<const T extends FilterSchema>(
@@ -37,6 +45,8 @@ export function useFilterTokens<const T extends FilterSchema>(
   const [selectedTokenIndex, setSelectedTokenIndex] = useState<number | null>(null);
   const [asyncOptions, setAsyncOptions] = useState<Record<string, Option[]>>({});
   const [asyncLoading, setAsyncLoading] = useState(false);
+  const [asyncError, setAsyncError] = useState<string | null>(null);
+  const [retryToken, setRetryToken] = useState(0);
   const [dateLabels, setDateLabels] = useState<Record<string, string>>({});
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -126,11 +136,23 @@ export function useFilterTokens<const T extends FilterSchema>(
     const raw = def.options;
     if (typeof raw !== 'function') return;
 
+    let cancelled = false;
     const result = raw(ctx);
-    if (!(result instanceof Promise)) return;
+
+    if (!(result instanceof Promise)) {
+      // Sync fn — bail when content is unchanged to avoid loops with unstable ctx
+      const next = result as Option[];
+      setAsyncOptions((prev) => {
+        const existing = prev[activeCategory];
+        if (existing && optionsContentEqual(existing, next)) return prev;
+        return { ...prev, [activeCategory]: next };
+      });
+      setAsyncError((prev) => (prev === null ? prev : null));
+      return;
+    }
 
     setAsyncLoading(true);
-    let cancelled = false;
+    setAsyncError(null);
     result.then((resolved) => {
       if (!cancelled) {
         setAsyncOptions((prev) => ({ ...prev, [activeCategory]: resolved }));
@@ -138,12 +160,17 @@ export function useFilterTokens<const T extends FilterSchema>(
       }
     }).catch((error) => {
       if (!cancelled) {
-        console.error('[filter-tokens] Failed to load options:', error);
+        const message = error instanceof Error ? error.message : 'Failed to load options';
+        setAsyncError(message);
         setAsyncLoading(false);
       }
     });
     return () => { cancelled = true; setAsyncLoading(false); };
-  }, [mode, activeCategory, schema, ctx]);
+    // schema and ctx intentionally omitted — they are typically unstable
+    // (parent re-renders with fresh objects) and would re-trigger fetches
+    // every render. Use retry() to refetch on context changes.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mode, activeCategory, retryToken]);
 
   // ── Clean up stale dateLabels when values change externally ──
 
@@ -213,10 +240,11 @@ export function useFilterTokens<const T extends FilterSchema>(
       if (!def) return [];
 
       if (def.type === 'select') {
-        let opts = resolveOptionsSync(def.options, ctx);
-        if (opts.length === 0 && asyncOptions[activeCategory]) {
-          opts = asyncOptions[activeCategory];
-        }
+        // Static array → resolve inline; function → read from the cache
+        // populated by the effect (avoids side-effecting the fn on every render).
+        const opts = typeof def.options === 'function'
+          ? asyncOptions[activeCategory] ?? []
+          : resolveOptionsSync(def.options, ctx);
         return opts
           .filter((o) => !search || o.label.toLowerCase().includes(lowerSearch))
           .map((o) => {
@@ -403,6 +431,8 @@ export function useFilterTokens<const T extends FilterSchema>(
     dropdown: {
       open: isOpen,
       loading: asyncLoading,
+      error: asyncError,
+      retry: () => setRetryToken((n) => n + 1),
       items,
       select: selectItem,
       close,

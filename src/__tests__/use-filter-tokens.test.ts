@@ -518,8 +518,7 @@ describe('useFilterTokens', () => {
       expect(result.current.dropdown.items[1].label).toBe('Los Angeles');
     });
 
-    it('sets loading false and logs error on rejection', async () => {
-      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    it('exposes error and clears loading on rejection', async () => {
       const failSchema = {
         city: {
           type: 'select' as const,
@@ -538,11 +537,37 @@ describe('useFilterTokens', () => {
         expect(result.current.dropdown.loading).toBe(false);
       });
       expect(result.current.dropdown.items).toHaveLength(0);
-      expect(consoleSpy).toHaveBeenCalledWith(
-        '[filter-tokens] Failed to load options:',
-        expect.any(Error),
+      expect(result.current.dropdown.error).toBe('network error');
+    });
+
+    it('retry() re-runs the options fn and clears prior error', async () => {
+      let attempt = 0;
+      const failSchema = {
+        city: {
+          type: 'select' as const,
+          label: 'City',
+          options: () => {
+            attempt += 1;
+            return attempt === 1
+              ? Promise.reject(new Error('first attempt failed'))
+              : Promise.resolve([{ value: 'nyc', label: 'New York' }]);
+          },
+        },
+      } as const;
+      const onChange = vi.fn();
+      const { result } = renderHook(() =>
+        useFilterTokens({ filters: failSchema, value: {}, onChange }),
       );
-      consoleSpy.mockRestore();
+      act(() => result.current.inputProps.onFocus());
+      act(() => result.current.dropdown.select(result.current.dropdown.items[0]));
+      await waitFor(() => {
+        expect(result.current.dropdown.error).toBe('first attempt failed');
+      });
+      act(() => result.current.dropdown.retry());
+      await waitFor(() => {
+        expect(result.current.dropdown.error).toBeNull();
+        expect(result.current.dropdown.items).toHaveLength(1);
+      });
     });
   });
 

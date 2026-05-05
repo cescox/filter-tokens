@@ -441,6 +441,45 @@ describe('FilterTokens async loading', () => {
     expect(screen.getByText('Los Angeles')).toBeInTheDocument();
     expect(screen.queryByRole('status')).not.toBeInTheDocument();
   });
+
+  it('shows error state with Retry when async fails, then recovers', async () => {
+    let attempt = 0;
+    const failingFilters = {
+      city: {
+        type: 'select' as const,
+        label: 'City',
+        options: () => {
+          attempt += 1;
+          if (attempt === 1) {
+            return Promise.reject(new Error('Network down'));
+          }
+          return Promise.resolve([{ value: 'nyc', label: 'New York' }]);
+        },
+      },
+    } as const;
+    function FailingSetup() {
+      const [value, setValue] = React.useState({});
+      return (
+        <FilterTokens
+          filters={failingFilters}
+          value={value as any}
+          onChange={setValue as any}
+          placeholder="Filter..."
+        />
+      );
+    }
+    const user = userEvent.setup();
+    render(<FailingSetup />);
+    await user.click(screen.getByRole('button', { name: 'Filter...' }));
+    await user.click(screen.getByText('City'));
+    // Error UI appears
+    await screen.findByText('Failed to load options');
+    expect(screen.getByRole('button', { name: 'Retry' })).toBeInTheDocument();
+    // Retry triggers a fresh fetch that resolves
+    await user.click(screen.getByRole('button', { name: 'Retry' }));
+    await screen.findByText('New York');
+    expect(screen.queryByText('Failed to load options')).not.toBeInTheDocument();
+  });
 });
 
 // ── Number Entry Flow ─────────────────────────

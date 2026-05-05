@@ -140,6 +140,8 @@ export interface InputProps {
 export interface Dropdown {
   open: boolean;
   loading: boolean;
+  error: string | null;
+  retry: () => void;
   items: DropdownItem[];
   select: (item: DropdownItem) => void;
   close: () => void;

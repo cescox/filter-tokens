@@ -246,7 +246,24 @@ function FilterTokens<const T extends FilterSchema>({
               </div>
             )}
 
-            {ft.dropdown.items.length === 0 && !isTextEntry && !ft.dropdown.loading && (
+            {ft.dropdown.error && !ft.dropdown.loading && (
+              <div
+                data-slot="filter-tokens-error"
+                role="alert"
+                className="flex flex-col items-center gap-2 px-2 py-6 text-center text-sm"
+              >
+                <span className="text-destructive">Failed to load options</span>
+                <button
+                  type="button"
+                  onClick={ft.dropdown.retry}
+                  className="text-xs text-muted-foreground underline hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-sm"
+                >
+                  Retry
+                </button>
+              </div>
+            )}
+
+            {ft.dropdown.items.length === 0 && !isTextEntry && !ft.dropdown.loading && !ft.dropdown.error && (
               <div
                 data-slot="filter-tokens-empty"
                 role="status"
