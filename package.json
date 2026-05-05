@@ -29,8 +29,8 @@
     "./components/filter-tokens": {
       "default": "./src/components/filter-tokens.tsx"
     },
-    "./components/filter-tokens.base": {
-      "default": "./src/components/filter-tokens.base.tsx"
+    "./components/filter-tokens-base": {
+      "default": "./src/components/filter-tokens-base.tsx"
     },
     "./components/ui/*": {
       "default": "./src/components/ui/*.tsx"

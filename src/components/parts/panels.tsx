@@ -7,7 +7,7 @@ import type {
   FilterValues,
 } from "filter-tokens";
 import { RangeCalendarPanel, SingleCalendarPanel } from "./calendar-panel";
-import { NumberEntryPanel } from "./number-panel";
+import { NumberPanel } from "./number-panel";
 
 export interface PanelsProps<T extends FilterSchema> {
   ft: FilterTokensReturn<T>;
@@ -51,7 +51,7 @@ export function Panels<T extends FilterSchema>({
 
   if (mode === "number-entry" && activeDef.type === "number") {
     return (
-      <NumberEntryPanel
+      <NumberPanel
         unit={activeDef.unit}
         min={activeDef.min}
         max={activeDef.max}

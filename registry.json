@@ -61,7 +61,7 @@
       "registryDependencies": ["button", "calendar"],
       "files": [
         {
-          "path": "src/components/filter-tokens.base.tsx",
+          "path": "src/components/filter-tokens-base.tsx",
           "type": "registry:component",
           "target": "components/filter-tokens.tsx"
         },

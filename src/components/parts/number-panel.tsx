@@ -4,7 +4,7 @@ import * as React from "react";
 import { Button } from "filter-tokens/components/ui/button";
 import { cn } from "filter-tokens/lib/utils";
 
-export interface NumberEntryPanelProps {
+export interface NumberPanelProps {
   unit?: string;
   min?: number;
   max?: number;
@@ -13,14 +13,14 @@ export interface NumberEntryPanelProps {
   onCancel: () => void;
 }
 
-export function NumberEntryPanel({
+export function NumberPanel({
   unit,
   min,
   max,
   initialValue,
   onSelect,
   onCancel,
-}: NumberEntryPanelProps) {
+}: NumberPanelProps) {
   const [minVal, setMinVal] = React.useState(initialValue?.min?.toString() ?? "");
   const [maxVal, setMaxVal] = React.useState(initialValue?.max?.toString() ?? "");
   const minId = React.useId();

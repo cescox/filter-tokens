@@ -4,9 +4,9 @@ import * as React from "react";
 import { XIcon } from "lucide-react";
 import type { FilterSchema, FilterTokensReturn } from "filter-tokens";
 import { cn } from "filter-tokens/lib/utils";
-import { FilterTokenChip } from "./chip";
+import { Chip } from "./chip";
 
-export interface FilterTokensTriggerProps<T extends FilterSchema> {
+export interface TriggerProps<T extends FilterSchema> {
   ft: FilterTokensReturn<T>;
   /**
    * ID of the listbox element rendered inside the popover content.
@@ -18,13 +18,13 @@ export interface FilterTokensTriggerProps<T extends FilterSchema> {
   className?: string;
 }
 
-export function FilterTokensTrigger<T extends FilterSchema>({
+export function Trigger<T extends FilterSchema>({
   ft,
   listboxId,
   disabled,
   className,
-}: FilterTokensTriggerProps<T>) {
-  const tokenRefs = React.useRef<(HTMLSpanElement | null)[]>([]);
+}: TriggerProps<T>) {
+  const chipRefs = React.useRef<(HTMLSpanElement | null)[]>([]);
 
   const isPanelMode =
     ft.dropdown.state.mode === "date-entry" ||
@@ -84,10 +84,10 @@ export function FilterTokensTrigger<T extends FilterSchema>({
         onMouseDown={handleWrapperMouseDown}
       >
         {ft.tokens.map((token, index) => (
-          <FilterTokenChip
+          <Chip
             key={token.id}
             ref={(el) => {
-              tokenRefs.current[index] = el;
+              chipRefs.current[index] = el;
             }}
             category={token.category}
             label={token.label}
@@ -99,11 +99,11 @@ export function FilterTokensTrigger<T extends FilterSchema>({
               requestAnimationFrame(() => {
                 const nextChip =
                   removeIndex < expectedCount
-                    ? tokenRefs.current[removeIndex]
+                    ? chipRefs.current[removeIndex]
                     : null;
                 const prevChip =
                   removeIndex > 0
-                    ? tokenRefs.current[removeIndex - 1]
+                    ? chipRefs.current[removeIndex - 1]
                     : null;
                 (nextChip ?? prevChip ?? ft.inputProps.ref.current)?.focus();
               });

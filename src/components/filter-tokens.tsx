@@ -8,7 +8,7 @@ import {
   type FilterSchema,
   type FilterTokensProps,
 } from "filter-tokens";
-import { FilterTokensTrigger } from "./parts/trigger";
+import { Trigger } from "./parts/trigger";
 import { Header } from "./parts/header";
 import { Listbox } from "./parts/listbox";
 import { Panels } from "./parts/panels";
@@ -64,7 +64,7 @@ function FilterTokens<const T extends FilterSchema>({
     >
       <PopoverPrimitive.Anchor asChild>
         <div data-slot="filter-tokens" {...props}>
-          <FilterTokensTrigger
+          <Trigger
             ft={ft}
             listboxId={listboxId}
             disabled={disabled}

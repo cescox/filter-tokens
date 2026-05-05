@@ -4,7 +4,12 @@ import * as React from "react";
 import { XIcon } from "lucide-react";
 import { cn } from "filter-tokens/lib/utils";
 
-export interface FilterTokenChipProps {
+/**
+ * Visual rendering of a Token. Distinct from the `Token` data type
+ * exported from the package — that's the value object (id, category,
+ * label, displayValue, remove); this is the chip-shaped UI element.
+ */
+export interface ChipProps {
   category: string;
   label: string;
   displayValue: string;
@@ -13,10 +18,10 @@ export interface FilterTokenChipProps {
   disabled?: boolean;
 }
 
-export const FilterTokenChip = React.forwardRef<
+export const Chip = React.forwardRef<
   HTMLSpanElement,
-  FilterTokenChipProps
->(function FilterTokenChip(
+  ChipProps
+>(function Chip(
   { category, label, displayValue, onRemove, onClick, disabled },
   ref,
 ) {
