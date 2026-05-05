@@ -26,13 +26,18 @@ export interface ChipProps {
    * the last chip (ArrowRight on a focused chip).
    */
   onNext?: () => void;
+  /**
+   * Step out of the chip strip and back to the input (Escape on a focused
+   * chip). Aligns with Mantine's chip-input behaviour.
+   */
+  onEscape?: () => void;
 }
 
 export const Chip = React.forwardRef<
   HTMLSpanElement,
   ChipProps
 >(function Chip(
-  { category, label, displayValue, onRemove, onClick, disabled, onPrevious, onNext },
+  { category, label, displayValue, onRemove, onClick, disabled, onPrevious, onNext, onEscape },
   ref,
 ) {
   return (
@@ -77,6 +82,10 @@ export const Chip = React.forwardRef<
           e.preventDefault();
           e.stopPropagation();
           if (!disabled) onRemove();
+        } else if (e.key === "Escape" && onEscape) {
+          e.preventDefault();
+          e.stopPropagation();
+          onEscape();
         }
       }}
     >

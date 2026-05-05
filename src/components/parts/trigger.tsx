@@ -122,6 +122,7 @@ export function Trigger<T extends FilterSchema>({
                 ft.inputProps.ref.current?.focus();
               }
             }}
+            onEscape={() => ft.inputProps.ref.current?.focus()}
             disabled={disabled}
           />
         ))}
