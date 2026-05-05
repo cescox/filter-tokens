@@ -43,7 +43,7 @@ export function Listbox<T extends FilterSchema>({
       ref={containerRef}
       role="listbox"
       id={listboxId}
-      aria-label={activeLabel ?? "Filter categories"}
+      aria-label={activeLabel ?? ft.messages.popupListAria}
       aria-multiselectable={isMultiSelect || undefined}
       aria-orientation="vertical"
       className="max-h-[260px] overflow-y-auto p-1"
@@ -64,13 +64,13 @@ export function Listbox<T extends FilterSchema>({
           role="alert"
           className="flex flex-col items-center gap-2 px-2 py-6 text-center text-sm"
         >
-          <span className="text-destructive">Failed to load options</span>
+          <span className="text-destructive">{ft.messages.popupErrorLabel}</span>
           <button
             type="button"
             onClick={retry}
             className="rounded-sm text-xs text-muted-foreground underline hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           >
-            Retry
+            {ft.messages.popupRetryLabel}
           </button>
         </div>
       )}
@@ -81,7 +81,7 @@ export function Listbox<T extends FilterSchema>({
           role="status"
           className="px-2 py-6 text-center text-sm text-muted-foreground"
         >
-          No results found
+          {ft.messages.popupEmptyLabel}
         </div>
       )}
 
@@ -90,7 +90,7 @@ export function Listbox<T extends FilterSchema>({
           data-slot="filter-tokens-text-entry-hint"
           className="px-2 py-3 text-center text-xs text-muted-foreground"
         >
-          Press <kbd className="rounded bg-muted px-1 py-0.5 font-mono text-[10px]">Enter</kbd> to apply, <kbd className="rounded bg-muted px-1 py-0.5 font-mono text-[10px]">Esc</kbd> to cancel
+          {ft.messages.popupTextEntryHint}
         </div>
       )}
 

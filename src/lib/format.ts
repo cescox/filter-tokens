@@ -3,10 +3,12 @@ import type {
   FilterSchema,
   FilterValues,
   FilterTokensOption,
+  FilterTokensMessages,
   OptionsOrFn,
   FilterContext,
   FilterTokensToken,
 } from '../types';
+import { defaultMessages } from './messages';
 
 export function resolveOptionsSync<T extends FilterTokensOption>(
   optionsOrFn: OptionsOrFn<T> | undefined,
@@ -60,6 +62,7 @@ export function formatFilterValue(
   ctx: FilterContext,
   locale?: string,
   dateLabel?: string,
+  messages: FilterTokensMessages = defaultMessages,
 ): string {
   if (val === undefined || val === null) return '';
 
@@ -90,8 +93,8 @@ export function formatFilterValue(
     const d = val as { date?: string; from?: string; to?: string };
     const fmt = (s: string) => formatDateShort(s, locale);
     if (d.from && d.to) return `${fmt(d.from)} – ${fmt(d.to)}`;
-    if (d.from) return `Since ${fmt(d.from)}`;
-    if (d.to) return `Until ${fmt(d.to)}`;
+    if (d.from) return messages.dateSinceFormat(fmt(d.from));
+    if (d.to) return messages.dateUntilFormat(fmt(d.to));
     if (d.date) return fmt(d.date);
     return '';
   }
@@ -112,6 +115,7 @@ export function buildTokens(
   onRemove: (category: string) => void,
   dateLabels: Record<string, string> = {},
   locale?: string,
+  messages: FilterTokensMessages = defaultMessages,
 ): FilterTokensToken[] {
   const tokens: FilterTokensToken[] = [];
 
@@ -119,7 +123,7 @@ export function buildTokens(
     const val = values[key];
     if (val === undefined || val === null) continue;
 
-    const displayValue = formatFilterValue(def, val, ctx, locale, dateLabels[key]);
+    const displayValue = formatFilterValue(def, val, ctx, locale, dateLabels[key], messages);
     if (!displayValue) continue;
 
     tokens.push({

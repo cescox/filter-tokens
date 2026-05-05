@@ -13,6 +13,10 @@ export interface ChipProps {
   category: string;
   label: string;
   displayValue: string;
+  /** Resolved aria-label string for the chip (`messages.chipName`). */
+  ariaLabel: string;
+  /** Resolved aria-label string for the remove button (`messages.chipRemoveName`). */
+  removeAriaLabel: string;
   onRemove: () => void;
   onClick?: () => void;
   disabled?: boolean;
@@ -37,7 +41,7 @@ export const Chip = React.forwardRef<
   HTMLSpanElement,
   ChipProps
 >(function Chip(
-  { category, label, displayValue, onRemove, onClick, disabled, onPrevious, onNext, onEscape },
+  { category, label, displayValue, ariaLabel, removeAriaLabel, onRemove, onClick, disabled, onPrevious, onNext, onEscape },
   ref,
 ) {
   return (
@@ -49,7 +53,7 @@ export const Chip = React.forwardRef<
       role="button"
       tabIndex={disabled ? -1 : 0}
       aria-disabled={disabled || undefined}
-      aria-label={`${label}: ${displayValue}. Click to edit.`}
+      aria-label={ariaLabel}
       className={cn(
         "group inline-flex items-center gap-1 rounded-md bg-secondary py-0.5 pl-2 pr-1 text-xs font-medium text-secondary-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
         disabled
@@ -110,7 +114,7 @@ export const Chip = React.forwardRef<
           // before the remove handler runs.
           e.stopPropagation();
         }}
-        aria-label={`Remove ${label}: ${displayValue}`}
+        aria-label={removeAriaLabel}
         disabled={disabled}
       >
         <XIcon className="size-3" />

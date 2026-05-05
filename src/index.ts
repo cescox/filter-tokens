@@ -15,6 +15,7 @@ export type {
   FilterTokensDropdownItem,
   FilterTokensDropdownState,
   FilterTokensInputProps,
+  FilterTokensMessages,
   FilterTokensOption,
   IconComponent,
   DateRangePreset,

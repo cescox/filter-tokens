@@ -41,6 +41,7 @@ export function Panels<T extends FilterSchema>({
         initialValue={currentValue as { from?: string; to?: string } | undefined}
         onSelect={(v) => ft.applyDate(activeCategory, v)}
         onCancel={ft.dropdown.close}
+        messages={ft.messages}
       />
     ) : (
       <SingleCalendarPanel
@@ -49,6 +50,7 @@ export function Panels<T extends FilterSchema>({
         initialValue={currentValue as { date?: string } | undefined}
         onSelect={(v) => ft.applyDate(activeCategory, v)}
         onCancel={ft.dropdown.close}
+        messages={ft.messages}
       />
     );
   }
@@ -62,6 +64,7 @@ export function Panels<T extends FilterSchema>({
         initialValue={currentValue as { min?: number; max?: number } | undefined}
         onSelect={(v) => ft.applyNumber(activeCategory, v)}
         onCancel={ft.dropdown.close}
+        messages={ft.messages}
       />
     );
   }

@@ -1,14 +1,16 @@
 "use client";
 
 import { ChevronLeftIcon } from "lucide-react";
+import type { FilterTokensMessages } from "filter-tokens";
 
 export interface HeaderProps {
   activeLabel: string;
   isDateEntry: boolean;
   onBack: () => void;
+  messages: FilterTokensMessages;
 }
 
-export function Header({ activeLabel, isDateEntry, onBack }: HeaderProps) {
+export function Header({ activeLabel, isDateEntry, onBack, messages }: HeaderProps) {
   return (
     <div
       data-slot="filter-tokens-dropdown-header"
@@ -18,8 +20,8 @@ export function Header({ activeLabel, isDateEntry, onBack }: HeaderProps) {
         type="button"
         aria-label={
           isDateEntry
-            ? `Back to ${activeLabel} options`
-            : "Back to filter categories"
+            ? messages.popupBackToFilterAria(activeLabel)
+            : messages.popupBackAria
         }
         className="rounded-sm p-0.5 text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         onClick={onBack}

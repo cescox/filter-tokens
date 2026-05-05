@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import type { Locale } from "date-fns";
+import type { FilterTokensMessages } from "filter-tokens";
 import { Button } from "filter-tokens/components/ui/button";
 import { Calendar, CalendarDayButton } from "filter-tokens/components/ui/calendar";
 import { DateTimeRow } from "./date-time-row";
@@ -26,6 +27,7 @@ export interface RangeCalendarPanelProps {
   initialValue?: { from?: string; to?: string };
   onSelect: (value: { from?: string; to?: string }) => void;
   onCancel: () => void;
+  messages: FilterTokensMessages;
 }
 
 export function RangeCalendarPanel({
@@ -34,6 +36,7 @@ export function RangeCalendarPanel({
   initialValue,
   onSelect,
   onCancel,
+  messages,
 }: RangeCalendarPanelProps) {
   const [from, setFrom] = React.useState<Date | undefined>(() =>
     initialValue?.from ? new Date(initialValue.from) : undefined,
@@ -154,7 +157,8 @@ export function RangeCalendarPanel({
     >
       <div className="space-y-1 px-3 pb-1 pt-3">
         <DateTimeRow
-          label="Start"
+          label={messages.dateFromLabel}
+          ariaLabel={messages.dateInputAria(messages.dateFromLabel, showTime)}
           date={from}
           active={activeField === "start"}
           onFocus={() => setActiveField("start")}
@@ -179,7 +183,8 @@ export function RangeCalendarPanel({
           locale={locale}
         />
         <DateTimeRow
-          label="End"
+          label={messages.dateToLabel}
+          ariaLabel={messages.dateInputAria(messages.dateToLabel, showTime)}
           date={to}
           active={activeField === "end"}
           onFocus={() => setActiveField("end")}
@@ -216,7 +221,7 @@ export function RangeCalendarPanel({
       </div>
       <div className="flex justify-end gap-2 px-3 pb-3">
         <Button variant="ghost" onClick={onCancel}>
-          Cancel
+          {messages.cancelLabel}
         </Button>
         <Button
           // Apply is disabled when the user has nothing to commit OR when
@@ -226,7 +231,7 @@ export function RangeCalendarPanel({
           disabled={(!from && !to) || (from !== undefined && to !== undefined && from > to)}
           onClick={handleApply}
         >
-          Apply
+          {messages.applyLabel}
         </Button>
       </div>
     </div>
@@ -239,6 +244,7 @@ export interface SingleCalendarPanelProps {
   initialValue?: { date?: string };
   onSelect: (value: { date: string }) => void;
   onCancel: () => void;
+  messages: FilterTokensMessages;
 }
 
 export function SingleCalendarPanel({
@@ -247,6 +253,7 @@ export function SingleCalendarPanel({
   initialValue,
   onSelect,
   onCancel,
+  messages,
 }: SingleCalendarPanelProps) {
   const [selected, setSelected] = React.useState<Date | undefined>(() => {
     if (!initialValue?.date) return undefined;
@@ -269,7 +276,8 @@ export function SingleCalendarPanel({
     >
       <div className="px-3 pb-1 pt-3">
         <DateTimeRow
-          label="Date"
+          label={messages.dateSingleLabel}
+          ariaLabel={messages.dateInputAria(messages.dateSingleLabel, showTime)}
           date={selected}
           onDateChange={(d) => {
             setSelected(d);
@@ -297,10 +305,10 @@ export function SingleCalendarPanel({
       {showTime && (
         <div className="flex justify-end gap-2 px-3 pb-3">
           <Button variant="ghost" onClick={onCancel}>
-            Cancel
+            {messages.cancelLabel}
           </Button>
           <Button disabled={!selected} onClick={handleApply}>
-            Apply
+            {messages.applyLabel}
           </Button>
         </div>
       )}

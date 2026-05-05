@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import type { FilterTokensMessages } from "filter-tokens";
 import { Button } from "filter-tokens/components/ui/button";
 import { cn } from "filter-tokens/lib/utils";
 
@@ -11,6 +12,7 @@ export interface NumberPanelProps {
   initialValue?: { min?: number; max?: number };
   onSelect: (value: { min?: number; max?: number }) => void;
   onCancel: () => void;
+  messages: FilterTokensMessages;
 }
 
 export function NumberPanel({
@@ -20,6 +22,7 @@ export function NumberPanel({
   initialValue,
   onSelect,
   onCancel,
+  messages,
 }: NumberPanelProps) {
   const [minVal, setMinVal] = React.useState(initialValue?.min?.toString() ?? "");
   const [maxVal, setMaxVal] = React.useState(initialValue?.max?.toString() ?? "");
@@ -47,12 +50,12 @@ export function NumberPanel({
     >
       <div className="flex items-center gap-2 px-2 py-1 text-sm">
         <label htmlFor={minId} className="w-9 shrink-0 text-xs font-medium text-muted-foreground">
-          Min
+          {messages.numberMinLabel}
         </label>
         <input
           id={minId}
           type="number"
-          aria-label={`Minimum value${unit ? ` (${unit})` : ""}`}
+          aria-label={messages.numberMinAria(unit)}
           className={cn(
             "flex-1 rounded-md border border-input bg-background px-2.5 py-1.5 text-sm font-mono tabular-nums placeholder:text-muted-foreground/40 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-1",
           )}
@@ -67,12 +70,12 @@ export function NumberPanel({
       </div>
       <div className="flex items-center gap-2 px-2 py-1 text-sm">
         <label htmlFor={maxId} className="w-9 shrink-0 text-xs font-medium text-muted-foreground">
-          Max
+          {messages.numberMaxLabel}
         </label>
         <input
           id={maxId}
           type="number"
-          aria-label={`Maximum value${unit ? ` (${unit})` : ""}`}
+          aria-label={messages.numberMaxAria(unit)}
           className={cn(
             "flex-1 rounded-md border border-input bg-background px-2.5 py-1.5 text-sm font-mono tabular-nums placeholder:text-muted-foreground/40 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-1",
           )}
@@ -87,10 +90,10 @@ export function NumberPanel({
       </div>
       <div className="flex justify-end gap-2 px-2">
         <Button variant="ghost" onClick={onCancel}>
-          Cancel
+          {messages.cancelLabel}
         </Button>
         <Button disabled={!hasValue} onClick={handleApply}>
-          Apply
+          {messages.applyLabel}
         </Button>
       </div>
     </div>

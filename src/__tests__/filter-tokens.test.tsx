@@ -172,7 +172,7 @@ describe('FilterTokens Pattern A trigger', () => {
     // the chip that's now at the same index — the Search chip.
     await user.click(screen.getByLabelText('Remove Tags: Bug'));
     await flushFocus();
-    expect(screen.getByLabelText('Search: x. Click to edit.')).toHaveFocus();
+    expect(screen.getByLabelText('Search: x')).toHaveFocus();
   });
 
   it('falls back to the input when removing the last chip', async () => {
@@ -191,7 +191,7 @@ describe('FilterTokens Pattern A trigger', () => {
       input.focus();
     });
     await user.keyboard('{ArrowLeft}');
-    expect(screen.getByLabelText('Tags: Bug. Click to edit.')).toHaveFocus();
+    expect(screen.getByLabelText('Tags: Bug')).toHaveFocus();
   });
 
   it('ArrowLeft / ArrowRight navigate between chips, ArrowRight from last returns to input', async () => {
@@ -200,13 +200,13 @@ describe('FilterTokens Pattern A trigger', () => {
     const input = getInput();
     await act(async () => { input.focus(); });
     await user.keyboard('{ArrowLeft}'); // → last chip (Tags)
-    expect(screen.getByLabelText('Tags: Bug. Click to edit.')).toHaveFocus();
+    expect(screen.getByLabelText('Tags: Bug')).toHaveFocus();
     await user.keyboard('{ArrowLeft}'); // → previous chip (Status)
     expect(
-      screen.getByLabelText('Status: Error. Click to edit.'),
+      screen.getByLabelText('Status: Error'),
     ).toHaveFocus();
     await user.keyboard('{ArrowRight}'); // → next chip (Tags)
-    expect(screen.getByLabelText('Tags: Bug. Click to edit.')).toHaveFocus();
+    expect(screen.getByLabelText('Tags: Bug')).toHaveFocus();
     await user.keyboard('{ArrowRight}'); // → input (last chip → input)
     expect(input).toHaveFocus();
   });
@@ -214,7 +214,7 @@ describe('FilterTokens Pattern A trigger', () => {
   it('Escape on a focused chip returns focus to the input', async () => {
     const user = userEvent.setup();
     render(<Setup initialValue={{ status: 'error' }} />);
-    const chip = screen.getByLabelText('Status: Error. Click to edit.');
+    const chip = screen.getByLabelText('Status: Error');
     chip.focus();
     expect(chip).toHaveFocus();
     await user.keyboard('{Escape}');
@@ -224,7 +224,7 @@ describe('FilterTokens Pattern A trigger', () => {
   it('Backspace on a focused chip removes that chip', async () => {
     const user = userEvent.setup();
     render(<Setup initialValue={{ status: 'error', tags: ['bug'] }} />);
-    const tagsChip = screen.getByLabelText('Tags: Bug. Click to edit.');
+    const tagsChip = screen.getByLabelText('Tags: Bug');
     tagsChip.focus();
     await user.keyboard('{Backspace}');
     expect(getValue()).toEqual({ status: 'error' });
@@ -260,7 +260,7 @@ describe('FilterTokens single select', () => {
   it('shows selected state on re-click', async () => {
     const user = userEvent.setup();
     render(<Setup initialValue={{ status: 'error' }} />);
-    await user.click(screen.getByLabelText('Status: Error. Click to edit.'));
+    await user.click(screen.getByLabelText('Status: Error'));
     const errorOption = screen.getByRole('option', { name: /Error/ });
     expect(errorOption).toHaveAttribute('data-selected', 'true');
   });
@@ -268,7 +268,7 @@ describe('FilterTokens single select', () => {
   it('replaces value on different selection', async () => {
     const user = userEvent.setup();
     render(<Setup initialValue={{ status: 'error' }} />);
-    await user.click(screen.getByLabelText('Status: Error. Click to edit.'));
+    await user.click(screen.getByLabelText('Status: Error'));
     await user.click(screen.getByText('Success'));
     expect(getValue()).toEqual({ status: 'success' });
   });
@@ -293,7 +293,7 @@ describe('FilterTokens multi select', () => {
   it('toggles value off', async () => {
     const user = userEvent.setup();
     render(<Setup initialValue={{ tags: ['bug', 'feature'] }} />);
-    await user.click(screen.getByLabelText('Tags: Bug, Feature. Click to edit.'));
+    await user.click(screen.getByLabelText('Tags: Bug, Feature'));
     // Uncheck Bug
     await user.click(screen.getByText('Bug'));
     expect(getValue()).toEqual({ tags: ['feature'] });
@@ -302,7 +302,7 @@ describe('FilterTokens multi select', () => {
   it('removes token when last value toggled off', async () => {
     const user = userEvent.setup();
     render(<Setup initialValue={{ tags: ['bug'] }} />);
-    await user.click(screen.getByLabelText('Tags: Bug. Click to edit.'));
+    await user.click(screen.getByLabelText('Tags: Bug'));
     await user.click(screen.getByRole('option', { name: /Bug/ }));
     expect(getValue()).toEqual({});
   });
@@ -323,7 +323,7 @@ describe('FilterTokens text entry', () => {
   it('pre-fills current value on pill re-click', async () => {
     const user = userEvent.setup();
     render(<Setup initialValue={{ search: 'timeout' }} />);
-    await user.click(screen.getByLabelText('Search: timeout. Click to edit.'));
+    await user.click(screen.getByLabelText('Search: timeout'));
     const input = getInput();
     expect(input).toHaveValue('timeout');
   });
@@ -522,7 +522,7 @@ describe('FilterTokens search', () => {
     render(<Setup />);
     await user.click(getInput());
     await user.type(getInput(), 'zzzzz');
-    expect(screen.getByText('No results found')).toBeInTheDocument();
+    expect(screen.getByText('No results')).toBeInTheDocument();
   });
 });
 
@@ -603,7 +603,7 @@ describe('FilterTokens back button', () => {
     render(<Setup />);
     await user.click(getInput());
     await user.click(screen.getByText('Status'));
-    expect(screen.getByLabelText('Back to filter categories')).toBeInTheDocument();
+    expect(screen.getByLabelText('Back to filters')).toBeInTheDocument();
   });
 
   it('goes back to categories on back button click', async () => {
@@ -611,7 +611,7 @@ describe('FilterTokens back button', () => {
     render(<Setup />);
     await user.click(getInput());
     await user.click(screen.getByText('Status'));
-    await user.click(screen.getByLabelText('Back to filter categories'));
+    await user.click(screen.getByLabelText('Back to filters'));
     expect(screen.getByText('Tags')).toBeInTheDocument();
     expect(screen.getByText('Period')).toBeInTheDocument();
   });
@@ -674,7 +674,7 @@ describe('FilterTokens async loading', () => {
     await user.click(getInput());
     await user.click(screen.getByText('City'));
     expect(document.querySelector('[data-slot="filter-tokens-loading"]')).not.toBeNull();
-    expect(screen.queryByText('No results found')).not.toBeInTheDocument();
+    expect(screen.queryByText('No results')).not.toBeInTheDocument();
   });
 
   it('shows options after async resolution', async () => {

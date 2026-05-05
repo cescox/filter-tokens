@@ -103,6 +103,8 @@ export function Trigger<T extends FilterSchema>({
             category={token.category}
             label={token.label}
             displayValue={token.displayValue}
+            ariaLabel={ft.messages.tokenAria(token.label, token.displayValue)}
+            removeAriaLabel={ft.messages.tokenRemoveAria(token.label, token.displayValue)}
             onRemove={() => {
               const removeIndex = index;
               const expectedCount = ft.tokens.length - 1;
@@ -201,7 +203,7 @@ export function Trigger<T extends FilterSchema>({
               // falls naturally. The user clicks the input again if they
               // want to add new filters.
             }}
-            aria-label="Clear all filters"
+            aria-label={ft.messages.clearAllAria}
             disabled={disabled}
           >
             <XIcon className="size-4" />

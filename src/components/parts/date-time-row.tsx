@@ -13,7 +13,10 @@ import { cn } from "filter-tokens/lib/utils";
 const PLACEHOLDER_REFERENCE_DATE = new Date(2000, 0, 15, 13, 30);
 
 export interface DateTimeRowProps {
+  /** Visible label shown next to the input (e.g. "Start", "End", "Date"). */
   label: string;
+  /** Resolved aria-label for the input (typically `messages.dateInputAria(...)`). */
+  ariaLabel: string;
   date: Date | undefined;
   /**
    * Called with the parsed date on a successful edit, OR with `undefined`
@@ -32,6 +35,7 @@ export interface DateTimeRowProps {
 
 export function DateTimeRow({
   label,
+  ariaLabel,
   date,
   onDateChange,
   showTime,
@@ -107,7 +111,7 @@ export function DateTimeRow({
         id={inputId}
         ref={inputRef}
         type="text"
-        aria-label={`${label} date${showTime ? " and time" : ""}`}
+        aria-label={ariaLabel}
         className={cn(
           "flex-1 rounded-md border bg-background px-2.5 py-1.5 text-sm font-mono tabular-nums placeholder:text-muted-foreground/40 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-1",
           active ? "border-ring ring-2 ring-ring ring-offset-1" : "border-input",

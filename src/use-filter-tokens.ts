@@ -11,12 +11,14 @@ import type {
   FilterTokensReturn,
   FilterTokensDropdownItem,
   FilterTokensDropdownState,
+  FilterTokensMessages,
   FilterTokensToken,
   FilterTokensOption,
   DateRangePreset,
   DateSinglePreset,
 } from './types';
 import { resolveOptionsSync, buildTokens, findOptionLabel, formatFilterValue } from './lib/format';
+import { mergeMessages } from './lib/messages';
 
 // ── Constants ──────────────────────────────
 
@@ -120,15 +122,16 @@ function getPlaceholder(
   state: FilterTokensDropdownState,
   schema: Record<string, FilterDef>,
   fallback: string,
+  messages: FilterTokensMessages,
 ): string {
   if (state.mode === 'input' && state.inputType === 'text') {
     const def = schema[state.category];
     if (def?.type === 'text' && def.placeholder) return def.placeholder;
-    return `Type ${def?.label ?? state.category}...`;
+    return messages.typePlaceholder(def?.label ?? state.category);
   }
   if (state.mode === 'values') {
     const def = schema[state.category];
-    if (def) return `Search ${def.label}...`;
+    if (def) return messages.searchPlaceholder(def.label);
   }
   return fallback;
 }
@@ -139,6 +142,7 @@ function diffAnnouncements(
   schema: Record<string, FilterSchema[string]>,
   ctx: { filters: FilterValues<FilterSchema> },
   locale: string | undefined,
+  messages: FilterTokensMessages,
 ): string[] {
   const out: string[] = [];
   const keys = new Set([...Object.keys(prev), ...Object.keys(next)]);
@@ -157,23 +161,23 @@ function diffAnnouncements(
       const nArr = (n as string[] | undefined) ?? [];
       const options = resolveOptionsSync(def.options, ctx);
       for (const v of nArr) {
-        if (!pArr.includes(v)) out.push(`Added ${label}: ${findOptionLabel(options, v)}`);
+        if (!pArr.includes(v)) out.push(messages.tokenAddedAnnouncement(label, findOptionLabel(options, v)));
       }
       for (const v of pArr) {
-        if (!nArr.includes(v)) out.push(`Removed ${label}: ${findOptionLabel(options, v)}`);
+        if (!nArr.includes(v)) out.push(messages.tokenRemovedAnnouncement(label, findOptionLabel(options, v)));
       }
       continue;
     }
 
-    const pDisplay = formatFilterValue(def, p, ctx, locale);
-    const nDisplay = formatFilterValue(def, n, ctx, locale);
+    const pDisplay = formatFilterValue(def, p, ctx, locale, undefined, messages);
+    const nDisplay = formatFilterValue(def, n, ctx, locale, undefined, messages);
     if (p === undefined && n !== undefined) {
-      if (nDisplay) out.push(`Added ${label}: ${nDisplay}`);
+      if (nDisplay) out.push(messages.tokenAddedAnnouncement(label, nDisplay));
     } else if (p !== undefined && n === undefined) {
-      if (pDisplay) out.push(`Removed ${label}: ${pDisplay}`);
+      if (pDisplay) out.push(messages.tokenRemovedAnnouncement(label, pDisplay));
     } else {
-      if (pDisplay) out.push(`Removed ${label}: ${pDisplay}`);
-      if (nDisplay) out.push(`Added ${label}: ${nDisplay}`);
+      if (pDisplay) out.push(messages.tokenRemovedAnnouncement(label, pDisplay));
+      if (nDisplay) out.push(messages.tokenAddedAnnouncement(label, nDisplay));
     }
   }
   return out;
@@ -182,12 +186,13 @@ function diffAnnouncements(
 export function useFilterTokens<const T extends FilterSchema>(
   options: UseFilterTokensOptions<T>,
 ): FilterTokensReturn<T> {
-  const { filters, value, onChange, placeholder = 'Filter...', locale } = options;
+  const { filters, value, onChange, placeholder = 'Filter...', locale, messages: messagesOverride } = options;
 
   // Internal untyped references — the generic boundary is at input/output only
   const schema = filters as Record<string, FilterSchema[string]>;
   const values = value as Record<string, unknown>;
   const emitChange = onChange as (v: Record<string, unknown>) => void;
+  const messages = useMemo(() => mergeMessages(messagesOverride), [messagesOverride]);
 
   // ── State ──────────────────────────────────
   //
@@ -341,9 +346,9 @@ export function useFilterTokens<const T extends FilterSchema>(
     const prev = prevValueRef.current;
     prevValueRef.current = values;
     if (prev === values) return;
-    const messages = diffAnnouncements(prev, values, schema, ctx, locale);
-    if (messages.length === 0) return;
-    setAnnouncement(messages.join('. '));
+    const announcements = diffAnnouncements(prev, values, schema, ctx, locale, messages);
+    if (announcements.length === 0) return;
+    setAnnouncement(announcements.join('. '));
     if (announcementTimerRef.current) clearTimeout(announcementTimerRef.current);
     announcementTimerRef.current = setTimeout(() => {
       setAnnouncement('');
@@ -598,11 +603,12 @@ export function useFilterTokens<const T extends FilterSchema>(
 
   // ── Return ─────────────────────────────────
 
-  const inputPlaceholder = getPlaceholder(state, schema, placeholder);
+  const inputPlaceholder = getPlaceholder(state, schema, placeholder, messages);
 
   return {
     tokens,
     announcement,
+    messages,
     inputProps: {
       ref: inputRef,
       value: search,

@@ -1,4 +1,10 @@
-import type { ComponentType, ChangeEvent, KeyboardEvent, RefObject } from 'react';
+import type {
+  ComponentType,
+  ChangeEvent,
+  KeyboardEvent,
+  ReactNode,
+  RefObject,
+} from 'react';
 
 /** Icon shape accepted by FilterDef.icon and FilterTokensDropdownItem.icon. */
 export type IconComponent = ComponentType<{ className?: string }>;
@@ -184,6 +190,13 @@ export interface FilterTokensReturn<T extends FilterSchema> {
   announcement: string;
   inputProps: FilterTokensInputProps;
   dropdown: FilterTokensDropdown;
+  /**
+   * Resolved message catalog — defaults merged with the optional partial
+   * passed via `useFilterTokens({ messages })`. Components and custom
+   * consumers read user-visible strings from here so a single override
+   * cascades to every render site.
+   */
+  messages: FilterTokensMessages;
   open: () => void;
   openCategory: (key: string) => void;
   clear: () => void;
@@ -191,6 +204,106 @@ export interface FilterTokensReturn<T extends FilterSchema> {
   applyDate: (category: string, value: { from?: string; to?: string } | { date: string }) => void;
   /** Commits a number range (called by the number panel's Apply button). */
   applyNumber: (category: string, value: { min?: number; max?: number }) => void;
+}
+
+// ── Messages (i18n / customization) ────────
+
+/**
+ * Catalog of every user-visible string the package renders. Pass a partial
+ * object via the `messages` option to override individual entries — defaults
+ * are English and live in `lib/messages.tsx`.
+ *
+ * Naming convention — every key reads as `[regionPrefix?][descriptor][roleSuffix]`:
+ *
+ *   Region prefix (where the message appears):
+ *     token*    — the visible filter pill
+ *     popup*    — the dropdown popover
+ *     date*     — the date entry panel
+ *     number*   — the number entry panel
+ *     (no prefix) — universal entries (clearAll, cancel, apply, type/search placeholders)
+ *
+ *   Role suffix (what kind of string it is):
+ *     *Aria         — accessible name (aria-label)
+ *     *Label        — visible static text
+ *     *Format       — template producing chip displayValue text
+ *     *Placeholder  — input placeholder
+ *     *Announcement — aria-live message
+ *     *Hint         — inline visible help (may contain markup)
+ */
+export interface FilterTokensMessages {
+  // ── Token (the visible filter pill)
+  /** aria-label on a token, describing the filter it represents. */
+  tokenAria: (filter: string, value: string) => string;
+  /** aria-label on a token's `×` remove button. */
+  tokenRemoveAria: (filter: string, value: string) => string;
+  /** aria-live string announced when a token is added. */
+  tokenAddedAnnouncement: (filter: string, value: string) => string;
+  /** aria-live string announced when a token is removed. */
+  tokenRemovedAnnouncement: (filter: string, value: string) => string;
+
+  // ── Popup (the dropdown popover)
+  /** aria-label of the listbox when listing all filters at the top level. */
+  popupListAria: string;
+  /** aria-label of the back button when stepping out to the filter list. */
+  popupBackAria: string;
+  /** aria-label of the back button when stepping out to a filter's values. */
+  popupBackToFilterAria: (filter: string) => string;
+  /** Visible text shown when async option loading fails. */
+  popupErrorLabel: string;
+  /** Visible label of the retry button. */
+  popupRetryLabel: string;
+  /** Visible empty-state text when no items match the search. */
+  popupEmptyLabel: string;
+  /**
+   * Inline hint shown beneath the input in text-entry mode. Default uses
+   * `<kbd>` markup — pass a plain string to disable styling.
+   */
+  popupTextEntryHint: ReactNode;
+
+  // ── Date entry panel
+  /** Visible label of the From input in a range calendar. */
+  dateFromLabel: string;
+  /** Visible label of the To input in a range calendar. */
+  dateToLabel: string;
+  /** Visible label of the single-date input. */
+  dateSingleLabel: string;
+  /**
+   * aria-label of a date input field. `fieldLabel` is the input's visible
+   * label ("Start" / "End" / "Date"); `hasTime` is true when time is included.
+   * The two-param form lets translators control word order while keeping
+   * the From/To inputs distinguishable to screen readers.
+   */
+  dateInputAria: (fieldLabel: string, hasTime: boolean) => string;
+  /** Visible label of the "Custom" listbox item (single-date filter). */
+  datePresetCustomLabel: string;
+  /** Visible label of the "Custom range" listbox item (range filter). */
+  datePresetCustomRangeLabel: string;
+  /** Token displayValue template when only `from` is set — e.g. "Since Apr 5". */
+  dateSinceFormat: (date: string) => string;
+  /** Token displayValue template when only `to` is set — e.g. "Until Apr 5". */
+  dateUntilFormat: (date: string) => string;
+
+  // ── Number entry panel
+  /** Visible label of the minimum-bound input. */
+  numberMinLabel: string;
+  /** Visible label of the maximum-bound input. */
+  numberMaxLabel: string;
+  /** aria-label of the minimum input. `unit` is the optional unit symbol. */
+  numberMinAria: (unit: string | undefined) => string;
+  /** aria-label of the maximum input. */
+  numberMaxAria: (unit: string | undefined) => string;
+
+  // ── Universals (no prefix — single, unambiguous entries)
+  /** aria-label of the trigger's "clear all filters" button. */
+  clearAllAria: string;
+  /** Visible label of the Cancel button (date and number panels). */
+  cancelLabel: string;
+  /** Visible label of the Apply button (date and number panels). */
+  applyLabel: string;
+  /** Combobox placeholder when in text-entry mode. */
+  typePlaceholder: (filter: string) => string;
+  /** Combobox placeholder when browsing a filter's values list. */
+  searchPlaceholder: (filter: string) => string;
 }
 
 // ── Component props ────────────────────────
@@ -202,6 +315,8 @@ export interface FilterTokensProps<T extends FilterSchema> {
   placeholder?: string;
   className?: string;
   disabled?: boolean;
+  /** Override individual user-visible strings. See `FilterTokensMessages`. */
+  messages?: Partial<FilterTokensMessages>;
 }
 
 export interface UseFilterTokensOptions<T extends FilterSchema> {
@@ -210,4 +325,6 @@ export interface UseFilterTokensOptions<T extends FilterSchema> {
   onChange: (value: FilterValues<T>) => void;
   placeholder?: string;
   locale?: string;
+  /** Override individual user-visible strings. See `FilterTokensMessages`. */
+  messages?: Partial<FilterTokensMessages>;
 }

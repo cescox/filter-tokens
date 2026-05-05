@@ -30,6 +30,7 @@ function FilterTokens<const T extends FilterSchema>({
   className,
   disabled,
   dateLocale,
+  messages,
   ...props
 }: FilterTokensComponentProps<T>) {
   const ft = useFilterTokens({
@@ -38,6 +39,7 @@ function FilterTokens<const T extends FilterSchema>({
     onChange,
     placeholder,
     locale: dateLocale?.code,
+    messages,
   });
   const triggerRef = React.useRef<HTMLDivElement>(null);
   const listboxId = React.useId();
@@ -115,6 +117,7 @@ function FilterTokens<const T extends FilterSchema>({
                 activeLabel={activeLabel}
                 isDateEntry={isDateEntry}
                 onBack={ft.dropdown.goBack}
+                messages={ft.messages}
               />
             )}
 
