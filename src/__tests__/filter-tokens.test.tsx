@@ -402,6 +402,24 @@ describe('FilterTokens date presets', () => {
     expect(period.to).toBeUndefined();
   });
 
+  it('highlights the End day on the calendar when re-editing a "Until X" filter', async () => {
+    // Was: rangeModifiers returned {} when from was undefined, so the End
+    // day got no visual treatment at all. Now End-only sets range_end.
+    const user = userEvent.setup();
+    render(
+      <Setup initialValue={{ period: { to: '2026-04-20T23:59:59Z' } }} />,
+    );
+    await user.click(screen.getByText('Period:').closest('[role="button"]')!);
+    // Confirm we're in the custom-date panel and the End input is pre-filled
+    const endInput = screen.getByLabelText('End date and time') as HTMLInputElement;
+    expect(endInput.value).toContain('04/20/2026');
+    // The day button for Apr 20 carries the data-range-end attribute that
+    // CalendarDayButton wires to the highlighted-pill style.
+    const day20 = document.querySelector('[data-day="4/20/2026"]');
+    expect(day20).not.toBeNull();
+    expect(day20?.getAttribute('data-range-end')).toBe('true');
+  });
+
   it('shows presets when re-clicking preset date pill', async () => {
     const user = userEvent.setup();
     render(<Setup />);
