@@ -16,13 +16,23 @@ export interface ChipProps {
   onRemove: () => void;
   onClick?: () => void;
   disabled?: boolean;
+  /**
+   * Move focus to the previous chip (ArrowLeft on a focused chip).
+   * Trigger passes a noop / undefined when there is no previous chip.
+   */
+  onPrevious?: () => void;
+  /**
+   * Move focus to the next chip, falling back to the input when this is
+   * the last chip (ArrowRight on a focused chip).
+   */
+  onNext?: () => void;
 }
 
 export const Chip = React.forwardRef<
   HTMLSpanElement,
   ChipProps
 >(function Chip(
-  { category, label, displayValue, onRemove, onClick, disabled },
+  { category, label, displayValue, onRemove, onClick, disabled, onPrevious, onNext },
   ref,
 ) {
   return (
@@ -55,6 +65,18 @@ export const Chip = React.forwardRef<
           e.preventDefault();
           e.stopPropagation();
           if (!disabled && onClick) onClick();
+        } else if (e.key === "ArrowLeft" && onPrevious) {
+          e.preventDefault();
+          e.stopPropagation();
+          onPrevious();
+        } else if (e.key === "ArrowRight" && onNext) {
+          e.preventDefault();
+          e.stopPropagation();
+          onNext();
+        } else if (e.key === "Backspace" || e.key === "Delete") {
+          e.preventDefault();
+          e.stopPropagation();
+          if (!disabled) onRemove();
         }
       }}
     >

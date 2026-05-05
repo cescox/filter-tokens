@@ -109,6 +109,19 @@ export function Trigger<T extends FilterSchema>({
               });
             }}
             onClick={() => ft.openCategory(token.category)}
+            onPrevious={
+              index > 0
+                ? () => chipRefs.current[index - 1]?.focus()
+                : undefined
+            }
+            onNext={() => {
+              if (index < ft.tokens.length - 1) {
+                chipRefs.current[index + 1]?.focus();
+              } else {
+                // Last chip → step out into the input.
+                ft.inputProps.ref.current?.focus();
+              }
+            }}
             disabled={disabled}
           />
         ))}
@@ -131,12 +144,26 @@ export function Trigger<T extends FilterSchema>({
             if (!disabled && !ft.dropdown.open) ft.open();
           }}
           onKeyDown={(e) => {
-            // Tab from the open combobox: close the popover so default Tab
-            // proceeds to the next focusable element on the page (instead of
-            // landing on the popover content's tab-stop). Don't preventDefault.
-            if (e.key === "Tab" && ft.dropdown.open) {
-              ft.dropdown.close();
+            // ArrowLeft on an empty input with the cursor at position 0:
+            // step into the chip strip, focusing the last chip. ArrowRight
+            // / typing leaves the input behaviour intact.
+            if (
+              e.key === "ArrowLeft" &&
+              !ft.inputProps.value &&
+              ft.tokens.length > 0
+            ) {
+              const el = e.currentTarget;
+              if (el.selectionStart === 0 && el.selectionEnd === 0) {
+                e.preventDefault();
+                chipRefs.current[ft.tokens.length - 1]?.focus();
+                return;
+              }
             }
+            // Tab is intentionally NOT closed here — letting the natural
+            // tab order walk through the popover (back button, retry, etc.)
+            // is the only way keyboard-only users can reach those controls.
+            // Radix's onFocusOutside still closes the popup once focus
+            // genuinely leaves the trigger + content surface.
             ft.inputProps.onKeyDown(e);
           }}
           className="flex-1 min-w-[120px] border-0 bg-transparent p-0 text-sm outline-none placeholder:text-muted-foreground"
@@ -152,10 +179,10 @@ export function Trigger<T extends FilterSchema>({
             onClick={(e) => {
               e.stopPropagation();
               ft.clear();
-              // ft.clear() closes the popover and removes the clear button
-              // itself, so DOM focus would otherwise fall to <body>. Move
-              // focus back to the input so the user can keep typing.
-              ft.inputProps.ref.current?.focus();
+              // Don't refocus the input. "Clear all" is a "done" gesture —
+              // matching Linear / Notion, the popover stays closed and focus
+              // falls naturally. The user clicks the input again if they
+              // want to add new filters.
             }}
             aria-label="Clear all filters"
             disabled={disabled}

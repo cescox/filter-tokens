@@ -505,7 +505,10 @@ export function useFilterTokens<const T extends FilterSchema>(
     if (e.key === 'ArrowDown') {
       e.preventDefault();
       if (!isOpen) { openCategories(); return; }
-      setHighlightedIndex((i) => Math.min(i + 1, items.length - 1));
+      // Wrap from last back to first.
+      setHighlightedIndex((i) =>
+        items.length === 0 ? -1 : i >= items.length - 1 ? 0 : i + 1,
+      );
     } else if (e.key === 'ArrowUp') {
       e.preventDefault();
       if (!isOpen) {
@@ -515,7 +518,10 @@ export function useFilterTokens<const T extends FilterSchema>(
         openCategories();
         return;
       }
-      setHighlightedIndex((i) => Math.max(i - 1, 0));
+      // Wrap from first / unset back to last.
+      setHighlightedIndex((i) =>
+        items.length === 0 ? -1 : i <= 0 ? items.length - 1 : i - 1,
+      );
     } else if (e.key === 'Home') {
       if (isOpen && items.length > 0) {
         e.preventDefault();
