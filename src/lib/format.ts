@@ -2,10 +2,10 @@ import type {
   FilterDef,
   FilterSchema,
   FilterValues,
-  Option,
+  FilterTokensOption,
   OptionsOrFn,
   FilterContext,
-  Token,
+  FilterTokensToken,
 } from '../types';
 
 export function resolveOptionsSync<T extends { value: string; label: string }>(
@@ -23,7 +23,7 @@ export function resolveOptionsSync<T extends { value: string; label: string }>(
 }
 
 export function findOptionLabel(
-  options: readonly Option[],
+  options: readonly FilterTokensOption[],
   value: string,
 ): string {
   const found = options.find((o) => o.value === value);
@@ -106,8 +106,8 @@ export function buildTokens(
   onRemove: (category: string) => void,
   dateLabels: Record<string, string> = {},
   locale?: string,
-): Token[] {
-  const tokens: Token[] = [];
+): FilterTokensToken[] {
+  const tokens: FilterTokensToken[] = [];
 
   for (const [key, def] of Object.entries(schema)) {
     const val = values[key];

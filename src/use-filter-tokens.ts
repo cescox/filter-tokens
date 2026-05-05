@@ -6,16 +6,16 @@ import type {
   FilterValues,
   UseFilterTokensOptions,
   FilterTokensReturn,
-  DropdownItem,
-  DropdownState,
-  Token,
-  Option,
+  FilterTokensDropdownItem,
+  FilterTokensDropdownState,
+  FilterTokensToken,
+  FilterTokensOption,
   DateRangePreset,
   DateSinglePreset,
 } from './types';
 import { resolveOptionsSync, buildTokens, findOptionLabel, formatFilterValue } from './lib/format';
 
-function optionsContentEqual(a: Option[], b: Option[]): boolean {
+function optionsContentEqual(a: FilterTokensOption[], b: FilterTokensOption[]): boolean {
   if (a.length !== b.length) return false;
   for (let i = 0; i < a.length; i++) {
     if (a[i].value !== b[i].value || a[i].label !== b[i].label) return false;
@@ -102,10 +102,10 @@ export function useFilterTokens<const T extends FilterSchema>(
   // class of bug and lets TypeScript enforce the invariants at every read
   // and every transition.
 
-  const [state, setState] = useState<DropdownState>({ mode: 'closed' });
+  const [state, setState] = useState<FilterTokensDropdownState>({ mode: 'closed' });
   const [search, setSearch] = useState('');
   const [highlightedIndex, setHighlightedIndex] = useState(-1);
-  const [asyncOptions, setAsyncOptions] = useState<Record<string, Option[]>>({});
+  const [asyncOptions, setAsyncOptions] = useState<Record<string, FilterTokensOption[]>>({});
   const [asyncLoading, setAsyncLoading] = useState(false);
   const [asyncError, setAsyncError] = useState<string | null>(null);
   const [retryToken, setRetryToken] = useState(0);
@@ -222,7 +222,7 @@ export function useFilterTokens<const T extends FilterSchema>(
 
     if (!(result instanceof Promise)) {
       // Sync fn — bail when content is unchanged to avoid loops with unstable ctx
-      const next = result as Option[];
+      const next = result as FilterTokensOption[];
       setAsyncOptions((prev) => {
         const existing = prev[cat];
         if (existing && optionsContentEqual(existing, next)) return prev;
@@ -309,7 +309,7 @@ export function useFilterTokens<const T extends FilterSchema>(
     emitChange(next);
   }
 
-  const tokens: Token[] = useMemo(
+  const tokens: FilterTokensToken[] = useMemo(
     () => buildTokens(schema, values as FilterValues<FilterSchema>, ctx, removeToken, dateLabels, locale),
     // eslint-disable-next-line react-hooks/exhaustive-deps — removeToken uses values via closure, but values is already a dep
     [schema, values, ctx, dateLabels, locale],
@@ -317,7 +317,7 @@ export function useFilterTokens<const T extends FilterSchema>(
 
   // ── Dropdown items ─────────────────────────
 
-  const items: DropdownItem[] = useMemo(() => {
+  const items: FilterTokensDropdownItem[] = useMemo(() => {
     const lowerSearch = search.toLowerCase();
 
     if (state.mode === 'categories') {
@@ -356,7 +356,7 @@ export function useFilterTokens<const T extends FilterSchema>(
       if (def.type === 'date' && def.presets) {
         const presets = def.presets as readonly (DateRangePreset | DateSinglePreset)[];
         const customLabel = `Custom${def.range ? ' range' : ''}...`;
-        const items: DropdownItem[] = presets
+        const items: FilterTokensDropdownItem[] = presets
           .filter((p) => !search || p.label.toLowerCase().includes(lowerSearch))
           .map((p, i) => ({ key: presetKey(i), label: p.label, selected: false, type: 'value' as const }));
         if (!search || customLabel.toLowerCase().includes(lowerSearch)) {
@@ -386,7 +386,7 @@ export function useFilterTokens<const T extends FilterSchema>(
 
   // ── Item selection ─────────────────────────
 
-  function selectItem(item: DropdownItem) {
+  function selectItem(item: FilterTokensDropdownItem) {
     if (item.type === 'category') {
       selectCategory(item.key);
       return;

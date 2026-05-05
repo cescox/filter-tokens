@@ -1,6 +1,9 @@
 import type { ComponentType, ChangeEvent, KeyboardEvent, RefObject } from 'react';
 
-export interface Option {
+/** Icon shape accepted by FilterDef.icon and FilterTokensDropdownItem.icon. */
+export type IconComponent = ComponentType<{ className?: string }>;
+
+export interface FilterTokensOption {
   readonly value: string;
   readonly label: string;
 }
@@ -32,15 +35,15 @@ export interface DateSinglePreset {
 export type SelectFilterDef = {
   readonly type: 'select';
   readonly label: string;
-  readonly icon?: ComponentType<{ className?: string }>;
+  readonly icon?: IconComponent;
   readonly multi?: boolean;
-  readonly options: OptionsOrFn<Option>;
+  readonly options: OptionsOrFn<FilterTokensOption>;
 };
 
 export type DateFilterDef = {
   readonly type: 'date';
   readonly label: string;
-  readonly icon?: ComponentType<{ className?: string }>;
+  readonly icon?: IconComponent;
   readonly range?: boolean;
   readonly time?: boolean;
   readonly presets?: readonly DateRangePreset[] | readonly DateSinglePreset[];
@@ -49,14 +52,14 @@ export type DateFilterDef = {
 export type TextFilterDef = {
   readonly type: 'text';
   readonly label: string;
-  readonly icon?: ComponentType<{ className?: string }>;
+  readonly icon?: IconComponent;
   readonly placeholder?: string;
 };
 
 export type NumberFilterDef = {
   readonly type: 'number';
   readonly label: string;
-  readonly icon?: ComponentType<{ className?: string }>;
+  readonly icon?: IconComponent;
   readonly unit?: string;
   readonly min?: number;
   readonly max?: number;
@@ -99,7 +102,7 @@ export type FilterValues<T extends FilterSchema> = {
 
 // ── Token ──────────────────────────────────
 
-export interface Token {
+export interface FilterTokensToken {
   id: string;
   category: string;
   label: string;
@@ -109,15 +112,15 @@ export interface Token {
 
 // ── Dropdown ───────────────────────────────
 
-export interface DropdownItem {
+export interface FilterTokensDropdownItem {
   key: string;
   label: string;
-  icon?: ComponentType<{ className?: string }>;
+  icon?: IconComponent;
   selected: boolean;
   type: 'category' | 'value';
 }
 
-export type DropdownState =
+export type FilterTokensDropdownState =
   | { mode: 'closed' }
   | { mode: 'categories' }
   | { mode: 'values'; category: string }
@@ -140,13 +143,13 @@ export interface FilterTokensInputProps {
   'aria-autocomplete': 'list';
 }
 
-export interface Dropdown {
+export interface FilterTokensDropdown {
   open: boolean;
   loading: boolean;
   error: string | null;
   retry: () => void;
-  items: DropdownItem[];
-  select: (item: DropdownItem) => void;
+  items: FilterTokensDropdownItem[];
+  select: (item: FilterTokensDropdownItem) => void;
   close: () => void;
   goBack: () => void;
   highlightedIndex: number;
@@ -155,13 +158,13 @@ export interface Dropdown {
    * Convenient for composing `aria-activedescendant`:
    * `aria-activedescendant={ft.dropdown.highlightedItem ? ${listboxId}-item-${ft.dropdown.highlightedItem.key} : undefined}`
    */
-  highlightedItem: DropdownItem | null;
+  highlightedItem: FilterTokensDropdownItem | null;
   setHighlightedIndex: (index: number) => void;
-  state: DropdownState;
+  state: FilterTokensDropdownState;
 }
 
 export interface FilterTokensReturn<T extends FilterSchema> {
-  tokens: Token[];
+  tokens: FilterTokensToken[];
   /**
    * Screen-reader announcement string for chip add/remove operations.
    * Wire this to a visually-hidden element with aria-live="polite".
@@ -169,7 +172,7 @@ export interface FilterTokensReturn<T extends FilterSchema> {
    */
   announcement: string;
   inputProps: FilterTokensInputProps;
-  dropdown: Dropdown;
+  dropdown: FilterTokensDropdown;
   open: () => void;
   openCategory: (key: string) => void;
   clear: () => void;
