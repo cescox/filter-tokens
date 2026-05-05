@@ -18,13 +18,7 @@ import type {
 } from './types';
 import { resolveOptionsSync, buildTokens, findOptionLabel, formatFilterValue } from './lib/format';
 
-function optionsContentEqual(a: FilterTokensOption[], b: FilterTokensOption[]): boolean {
-  if (a.length !== b.length) return false;
-  for (let i = 0; i < a.length; i++) {
-    if (a[i].value !== b[i].value || a[i].label !== b[i].label) return false;
-  }
-  return true;
-}
+// ── Constants ──────────────────────────────
 
 const ANNOUNCEMENT_CLEAR_MS = 1500;
 
@@ -40,6 +34,21 @@ const parsePresetKey = (key: string): number | null => {
   const n = parseInt(key.slice(PRESET_KEY_PREFIX.length), 10);
   return Number.isFinite(n) ? n : null;
 };
+
+// ── Pure helpers ───────────────────────────
+
+/**
+ * Shallow content equality on option arrays — used to short-circuit the async
+ * options effect when a sync options function returns a fresh-but-equivalent
+ * array on every render.
+ */
+function optionsContentEqual(a: FilterTokensOption[], b: FilterTokensOption[]): boolean {
+  if (a.length !== b.length) return false;
+  for (let i = 0; i < a.length; i++) {
+    if (a[i].value !== b[i].value || a[i].label !== b[i].label) return false;
+  }
+  return true;
+}
 
 /**
  * Picks the dropdown state and search seed produced by drilling into a
