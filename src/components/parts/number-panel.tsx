@@ -2,8 +2,8 @@
 
 import * as React from "react";
 import type { FilterTokensMessages } from "filter-tokens";
-import { Button } from "filter-tokens/components/ui/button";
 import { cn } from "filter-tokens/lib/utils";
+import { PanelActions } from "./panel-actions";
 
 export interface NumberPanelProps {
   unit?: string;
@@ -88,14 +88,12 @@ export function NumberPanel({
         />
         {unit && <span className="text-xs text-muted-foreground">{unit}</span>}
       </div>
-      <div className="flex justify-end gap-2 px-2">
-        <Button variant="ghost" onClick={onCancel}>
-          {messages.cancelLabel}
-        </Button>
-        <Button disabled={!hasValue} onClick={handleApply}>
-          {messages.applyLabel}
-        </Button>
-      </div>
+      <PanelActions
+        applyDisabled={!hasValue}
+        onCancel={onCancel}
+        onApply={handleApply}
+        messages={messages}
+      />
     </div>
   );
 }

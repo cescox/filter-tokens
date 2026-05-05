@@ -3,9 +3,9 @@
 import * as React from "react";
 import type { Locale } from "date-fns";
 import type { FilterTokensMessages } from "filter-tokens";
-import { Button } from "filter-tokens/components/ui/button";
 import { Calendar, CalendarDayButton } from "filter-tokens/components/ui/calendar";
 import { DateTimeRow } from "./date-time-row";
+import { PanelActions } from "./panel-actions";
 
 /** Returns a copy of the date set to 23:59:59.999 — used to anchor an End
  *  bound to the end of the chosen day instead of midnight at its start. */
@@ -219,21 +219,18 @@ export function RangeCalendarPanel({
           components={{ DayButton: DayButtonWithHover }}
         />
       </div>
-      <div className="flex justify-end gap-2 px-3 pb-3">
-        <Button variant="ghost" onClick={onCancel}>
-          {messages.cancelLabel}
-        </Button>
-        <Button
-          // Apply is disabled when the user has nothing to commit OR when
-          // the typed range is inverted (from > to). The user is free to
-          // type Start later than End while editing — the disabled state
-          // tells them why Apply isn't moving forward.
-          disabled={(!from && !to) || (from !== undefined && to !== undefined && from > to)}
-          onClick={handleApply}
-        >
-          {messages.applyLabel}
-        </Button>
-      </div>
+      {/*
+        Apply is disabled when the user has nothing to commit OR when the
+        typed range is inverted (from > to). The user is free to type Start
+        later than End while editing — the disabled state tells them why
+        Apply isn't moving forward.
+      */}
+      <PanelActions
+        applyDisabled={(!from && !to) || (from !== undefined && to !== undefined && from > to)}
+        onCancel={onCancel}
+        onApply={handleApply}
+        messages={messages}
+      />
     </div>
   );
 }
@@ -303,14 +300,12 @@ export function SingleCalendarPanel({
         />
       </div>
       {showTime && (
-        <div className="flex justify-end gap-2 px-3 pb-3">
-          <Button variant="ghost" onClick={onCancel}>
-            {messages.cancelLabel}
-          </Button>
-          <Button disabled={!selected} onClick={handleApply}>
-            {messages.applyLabel}
-          </Button>
-        </div>
+        <PanelActions
+          applyDisabled={!selected}
+          onCancel={onCancel}
+          onApply={handleApply}
+          messages={messages}
+        />
       )}
     </div>
   );
