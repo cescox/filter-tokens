@@ -125,6 +125,15 @@ export function Trigger<T extends FilterSchema>({
             // on the input bar always opens.
             if (!disabled && !ft.dropdown.open) ft.open();
           }}
+          onKeyDown={(e) => {
+            // Tab from the open combobox: close the popover so default Tab
+            // proceeds to the next focusable element on the page (instead of
+            // landing on the popover content's tab-stop). Don't preventDefault.
+            if (e.key === "Tab" && ft.dropdown.open) {
+              ft.dropdown.close();
+            }
+            ft.inputProps.onKeyDown(e);
+          }}
           className="flex-1 min-w-[120px] border-0 bg-transparent p-0 text-sm outline-none placeholder:text-muted-foreground"
         />
 

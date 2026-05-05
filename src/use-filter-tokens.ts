@@ -135,6 +135,11 @@ export function useFilterTokens<const T extends FilterSchema>(
   const prevValueRef = useRef<Record<string, unknown>>(values);
   const announcementTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  // ArrowUp on a closed combobox should land on the LAST item per WAI-ARIA.
+  // We can't compute items synchronously inside the keyboard handler because
+  // they're memoised against state we just dispatched, so we set a one-shot
+  // intent and pick it up in an effect after items are recomputed.
+  const openIntentRef = useRef<'first' | 'last' | null>(null);
 
   const isOpen = mode !== 'closed';
   const ctx = useMemo(() => ({ filters: values as FilterValues<FilterSchema> }), [values]);
@@ -179,8 +184,27 @@ export function useFilterTokens<const T extends FilterSchema>(
 
     setMode('values');
     setActiveCategory(key);
-    setHighlightedIndex(0);
     setSearch('');
+
+    // Highlight the currently-chosen value when re-editing a select chip,
+    // so Enter doesn't silently overwrite the user's pick. Falls back to 0
+    // for fresh selections / multi-select with no matching option in view.
+    let initialIndex = 0;
+    if (def.type === 'select') {
+      const currentVal = values[key];
+      const opts =
+        typeof def.options === 'function'
+          ? asyncOptions[key] ?? []
+          : resolveOptionsSync(def.options, ctx);
+      if (def.multi && Array.isArray(currentVal) && currentVal.length > 0) {
+        const idx = opts.findIndex((o) => (currentVal as string[]).includes(o.value));
+        if (idx >= 0) initialIndex = idx;
+      } else if (typeof currentVal === 'string') {
+        const idx = opts.findIndex((o) => o.value === currentVal);
+        if (idx >= 0) initialIndex = idx;
+      }
+    }
+    setHighlightedIndex(initialIndex);
   }
 
   function goBack() {
@@ -373,11 +397,20 @@ export function useFilterTokens<const T extends FilterSchema>(
     return [];
   }, [mode, activeCategory, schema, values, search, ctx, asyncOptions]);
 
-  // Reset highlight when items change
+  // Re-highlight when the user *types* a search (filtered list shifted) and
+  // honour ArrowUp's "land on last item" intent. Do NOT reset on bare
+  // mode/items.length changes — that would clobber the explicit highlight
+  // that selectCategory sets when re-editing an existing chip.
   useEffect(() => {
-    if (mode === 'categories') setHighlightedIndex(search ? 0 : -1);
-    else if (mode === 'values') setHighlightedIndex(0);
-  }, [items.length, mode, search]);
+    if (openIntentRef.current === 'last' && items.length > 0) {
+      openIntentRef.current = null;
+      setHighlightedIndex(items.length - 1);
+      return;
+    }
+    if (search) {
+      setHighlightedIndex(items.length > 0 ? 0 : -1);
+    }
+  }, [items.length, search]);
 
   // ── Item selection ─────────────────────────
 
@@ -405,7 +438,15 @@ export function useFilterTokens<const T extends FilterSchema>(
           next[activeCategory] = [...current, item.key];
         }
         emitChange(next);
-        return; // stay open for multi
+        // Multi-select stays open so the user can pick more values. Reset the
+        // search so the listbox shows everything again, drop the highlight to
+        // the top, and pull focus back to the input — otherwise the mouse
+        // click leaves focus inside the popover and the next keystroke goes
+        // to the wrong place.
+        setSearch('');
+        setHighlightedIndex(0);
+        requestAnimationFrame(() => inputRef.current?.focus());
+        return;
       }
       next[activeCategory] = item.key;
     } else if (def.type === 'date' && def.presets) {
@@ -470,6 +511,7 @@ export function useFilterTokens<const T extends FilterSchema>(
       if (!isOpen) {
         // WAI-ARIA combobox: ArrowUp on a closed combobox opens the popup
         // and lands on the *last* item (mirror of ArrowDown landing on first).
+        openIntentRef.current = 'last';
         openCategories();
         return;
       }
@@ -500,7 +542,13 @@ export function useFilterTokens<const T extends FilterSchema>(
   function handleInputChange(e: React.ChangeEvent<HTMLInputElement>) {
     const val = e.target.value;
     setSearch(val);
-    if (mode === 'closed') setMode('categories');
+    // Typing in a panel mode (date / number) means the user is searching for
+    // a different filter, not entering panel data. Bounce back to categories
+    // so the typed text actually drives a visible search.
+    if (mode === 'closed' || mode === 'date-entry' || mode === 'number-entry') {
+      setMode('categories');
+      setActiveCategory(null);
+    }
   }
 
   function handleFocus() {

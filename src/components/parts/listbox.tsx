@@ -78,7 +78,12 @@ export function Listbox<T extends FilterSchema>({
             key={item.key}
             id={`${listboxId}-item-${item.key}`}
             role="option"
-            aria-selected={item.selected}
+            // Categories aren't "selectable" in the WAI-ARIA sense — clicking
+            // one navigates into a sub-menu rather than choosing a value. Only
+            // emit aria-selected for actual value options. The data-selected
+            // attribute is preserved either way so consumer CSS can still
+            // indicate categories that have an active filter.
+            aria-selected={item.type === 'value' ? item.selected : undefined}
             data-slot="filter-tokens-dropdown-item"
             data-type={item.type}
             data-highlighted={isHighlighted || undefined}
