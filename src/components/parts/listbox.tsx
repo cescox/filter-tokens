@@ -24,9 +24,23 @@ export function Listbox<T extends FilterSchema>({
   const { items, highlightedIndex, loading, error, retry } = ft.dropdown;
   const showEmpty =
     items.length === 0 && !isTextEntry && !loading && !error;
+  const containerRef = React.useRef<HTMLDivElement>(null);
+
+  // Keep the keyboard-highlighted option visible. The listbox has a fixed
+  // max-h with overflow-y-auto, so without this, ArrowDown past the visible
+  // area moves the highlight off-screen. (jsdom doesn't implement
+  // scrollIntoView, so the optional-chain guards the test environment.)
+  React.useEffect(() => {
+    if (highlightedIndex < 0) return;
+    const el = containerRef.current?.querySelector<HTMLElement>(
+      '[data-highlighted="true"]',
+    );
+    el?.scrollIntoView?.({ block: "nearest" });
+  }, [highlightedIndex]);
 
   return (
     <div
+      ref={containerRef}
       role="listbox"
       id={listboxId}
       aria-label={activeLabel ?? "Filter categories"}

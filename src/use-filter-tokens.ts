@@ -610,11 +610,16 @@ export function useFilterTokens<const T extends FilterSchema>(
     setDateValue: (category: string, dateValue: { from: string; to?: string } | { date: string }) => {
       setDateLabels((prev) => { const n = { ...prev }; delete n[category]; return n; });
       emitChange({ ...values, [category]: dateValue });
-      afterValueSelected();
+      // Close after Apply: configuring a custom date is a deliberate
+      // multi-step action; the user signalled "done" by clicking Apply.
+      // (Preset selection uses the selectItem path and stays open.)
+      close();
     },
     setNumberValue: (category: string, numValue: { min?: number; max?: number }) => {
       emitChange({ ...values, [category]: numValue });
-      afterValueSelected();
+      // Same as setDateValue: Apply on a number panel is a deliberate
+      // commit, so close rather than reopening to categories.
+      close();
     },
   } as FilterTokensReturn<T>;
 }

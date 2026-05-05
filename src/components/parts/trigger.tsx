@@ -117,7 +117,12 @@ export function Trigger<T extends FilterSchema>({
           {...ft.inputProps}
           data-slot="filter-tokens-input"
           disabled={disabled}
-          aria-controls={ft.dropdown.open ? listboxId : undefined}
+          // Panel modes (date / number) render a dialog, not a listbox, so
+          // the popup type and the controlled element id both differ.
+          aria-haspopup={isPanelMode ? "dialog" : "listbox"}
+          aria-controls={
+            ft.dropdown.open && !isPanelMode ? listboxId : undefined
+          }
           aria-activedescendant={activeDescendantId}
           onClick={() => {
             // Focus alone won't reopen the popover after ESC-from-categories

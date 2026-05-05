@@ -471,7 +471,7 @@ describe('useFilterTokens', () => {
   });
 
   describe('setDateValue', () => {
-    it('sets date value and returns to categories', () => {
+    it('sets date value and closes the popover (Apply commits and dismisses)', () => {
       const { result, onChange } = setup();
       act(() => result.current.openCategory('period'));
       act(() => {
@@ -480,7 +480,8 @@ describe('useFilterTokens', () => {
       expect(onChange).toHaveBeenCalledWith({
         period: { from: '2026-04-05T00:00:00Z', to: '2026-04-15T23:59:59Z' },
       });
-      expect(result.current.dropdown.state.mode).toBe('categories');
+      // Apply on a custom date panel is a deliberate commit; close after.
+      expect(result.current.dropdown.state.mode).toBe('closed');
     });
   });
 
@@ -676,7 +677,7 @@ describe('useFilterTokens', () => {
       expect(result.current.tokens[0].displayValue).toBe('≤200€');
     });
 
-    it('sets number value and returns to categories', () => {
+    it('sets number value and closes the popover (Apply commits and dismisses)', () => {
       const { result, onChange } = setup();
       act(() => result.current.openCategory('amount'));
       expect(result.current.dropdown.state.mode).toBe('number-entry');
@@ -684,7 +685,7 @@ describe('useFilterTokens', () => {
         result.current.setNumberValue('amount', { min: 10, max: 500 });
       });
       expect(onChange).toHaveBeenCalledWith({ amount: { min: 10, max: 500 } });
-      expect(result.current.dropdown.state.mode).toBe('categories');
+      expect(result.current.dropdown.state.mode).toBe('closed');
     });
 
     it('goes back from number-entry to categories', () => {
