@@ -107,9 +107,6 @@ function diffAnnouncements(
   return out;
 }
 
-type Mode = 'closed' | 'categories' | 'values' | 'input';
-type InputType = 'text' | 'date' | 'number';
-
 export function useFilterTokens<const T extends FilterSchema>(
   options: UseFilterTokensOptions<T>,
 ): FilterTokensReturn<T> {
@@ -121,10 +118,14 @@ export function useFilterTokens<const T extends FilterSchema>(
   const emitChange = onChange as (v: Record<string, unknown>) => void;
 
   // ── State ──────────────────────────────────
+  //
+  // The dropdown state is a single discriminated union — `mode` plus the
+  // mode-specific fields (`category`, `inputType`). Keeping these in one
+  // useState eliminates the "forgot to reset inputType when switching modes"
+  // class of bug and lets TypeScript enforce the invariants at every read
+  // and every transition.
 
-  const [mode, setMode] = useState<Mode>('closed');
-  const [inputType, setInputType] = useState<InputType | null>(null);
-  const [activeCategory, setActiveCategory] = useState<string | null>(null);
+  const [state, setState] = useState<DropdownState>({ mode: 'closed' });
   const [search, setSearch] = useState('');
   const [highlightedIndex, setHighlightedIndex] = useState(-1);
   const [asyncOptions, setAsyncOptions] = useState<Record<string, Option[]>>({});
@@ -142,15 +143,15 @@ export function useFilterTokens<const T extends FilterSchema>(
   // intent and pick it up in an effect after items are recomputed.
   const openIntentRef = useRef<'first' | 'last' | null>(null);
 
-  const isOpen = mode !== 'closed';
+  const isOpen = state.mode !== 'closed';
+  const activeCategory =
+    state.mode === 'values' || state.mode === 'input' ? state.category : null;
   const ctx = useMemo(() => ({ filters: values as FilterValues<FilterSchema> }), [values]);
 
   // ── State transitions ──────────────────────
 
   function openCategories() {
-    setMode('categories');
-    setInputType(null);
-    setActiveCategory(null);
+    setState({ mode: 'categories' });
     setHighlightedIndex(-1);
     setSearch('');
   }
@@ -160,9 +161,7 @@ export function useFilterTokens<const T extends FilterSchema>(
     if (!def) return;
 
     if (def.type === 'text') {
-      setMode('input');
-      setInputType('text');
-      setActiveCategory(key);
+      setState({ mode: 'input', category: key, inputType: 'text' });
       setHighlightedIndex(-1);
       const currentVal = values[key];
       setSearch(typeof currentVal === 'string' ? currentVal : '');
@@ -170,26 +169,20 @@ export function useFilterTokens<const T extends FilterSchema>(
     }
 
     if (def.type === 'number') {
-      setMode('input');
-      setInputType('number');
-      setActiveCategory(key);
+      setState({ mode: 'input', category: key, inputType: 'number' });
       setHighlightedIndex(-1);
       setSearch('');
       return;
     }
 
     if (def.type === 'date' && (!def.presets?.length || (values[key] && !dateLabels[key]))) {
-      setMode('input');
-      setInputType('date');
-      setActiveCategory(key);
+      setState({ mode: 'input', category: key, inputType: 'date' });
       setHighlightedIndex(-1);
       setSearch('');
       return;
     }
 
-    setMode('values');
-    setInputType(null);
-    setActiveCategory(key);
+    setState({ mode: 'values', category: key });
     setSearch('');
 
     // Highlight the currently-chosen value when re-editing a select chip,
@@ -214,17 +207,16 @@ export function useFilterTokens<const T extends FilterSchema>(
   }
 
   function goBack() {
-    if (mode === 'input' && inputType === 'date' && activeCategory) {
-      const def = schema[activeCategory];
+    if (state.mode === 'input' && state.inputType === 'date') {
+      const def = schema[state.category];
       if (def?.type === 'date' && def.presets?.length) {
-        setMode('values');
-        setInputType(null);
+        setState({ mode: 'values', category: state.category });
         setHighlightedIndex(0);
         setSearch('');
         return;
       }
     }
-    if (mode === 'values' || mode === 'input') {
+    if (state.mode === 'values' || state.mode === 'input') {
       openCategories();
       return;
     }
@@ -232,9 +224,7 @@ export function useFilterTokens<const T extends FilterSchema>(
   }
 
   function close() {
-    setMode('closed');
-    setInputType(null);
-    setActiveCategory(null);
+    setState({ mode: 'closed' });
     setSearch('');
     setHighlightedIndex(-1);
   }
@@ -242,8 +232,8 @@ export function useFilterTokens<const T extends FilterSchema>(
   // ── Async options loading ──────────────────
 
   useEffect(() => {
-    if (mode !== 'values' || !activeCategory) return;
-    const def = schema[activeCategory];
+    if (state.mode !== 'values') return;
+    const def = schema[state.category];
     if (def?.type !== 'select') return;
 
     const raw = def.options;
@@ -251,14 +241,15 @@ export function useFilterTokens<const T extends FilterSchema>(
 
     let cancelled = false;
     const result = raw(ctx);
+    const cat = state.category;
 
     if (!(result instanceof Promise)) {
       // Sync fn — bail when content is unchanged to avoid loops with unstable ctx
       const next = result as Option[];
       setAsyncOptions((prev) => {
-        const existing = prev[activeCategory];
+        const existing = prev[cat];
         if (existing && optionsContentEqual(existing, next)) return prev;
-        return { ...prev, [activeCategory]: next };
+        return { ...prev, [cat]: next };
       });
       setAsyncError((prev) => (prev === null ? prev : null));
       return;
@@ -268,7 +259,7 @@ export function useFilterTokens<const T extends FilterSchema>(
     setAsyncError(null);
     result.then((resolved) => {
       if (!cancelled) {
-        setAsyncOptions((prev) => ({ ...prev, [activeCategory]: resolved }));
+        setAsyncOptions((prev) => ({ ...prev, [cat]: resolved }));
         setAsyncLoading(false);
       }
     }).catch((error) => {
@@ -283,7 +274,7 @@ export function useFilterTokens<const T extends FilterSchema>(
     // (parent re-renders with fresh objects) and would re-trigger fetches
     // every render. Use retry() to refetch on context changes.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [mode, activeCategory, retryToken]);
+  }, [state, retryToken]);
 
   // ── Clean up stale dateLabels when values change externally ──
 
@@ -352,7 +343,7 @@ export function useFilterTokens<const T extends FilterSchema>(
   const items: DropdownItem[] = useMemo(() => {
     const lowerSearch = search.toLowerCase();
 
-    if (mode === 'categories') {
+    if (state.mode === 'categories') {
       return Object.entries(schema)
         .filter(([, def]) => !search || def.label.toLowerCase().includes(lowerSearch))
         .map(([key, def]) => ({
@@ -364,20 +355,20 @@ export function useFilterTokens<const T extends FilterSchema>(
         }));
     }
 
-    if (mode === 'values' && activeCategory) {
-      const def = schema[activeCategory];
+    if (state.mode === 'values') {
+      const def = schema[state.category];
       if (!def) return [];
 
       if (def.type === 'select') {
         // Static array → resolve inline; function → read from the cache
         // populated by the effect (avoids side-effecting the fn on every render).
         const opts = typeof def.options === 'function'
-          ? asyncOptions[activeCategory] ?? []
+          ? asyncOptions[state.category] ?? []
           : resolveOptionsSync(def.options, ctx);
         return opts
           .filter((o) => !search || o.label.toLowerCase().includes(lowerSearch))
           .map((o) => {
-            const currentVal = values[activeCategory];
+            const currentVal = values[state.category];
             const selected = def.multi && Array.isArray(currentVal)
               ? (currentVal as string[]).includes(o.value)
               : currentVal === o.value;
@@ -399,7 +390,7 @@ export function useFilterTokens<const T extends FilterSchema>(
     }
 
     return [];
-  }, [mode, activeCategory, schema, values, search, ctx, asyncOptions]);
+  }, [state, schema, values, search, ctx, asyncOptions]);
 
   // Re-highlight when the user *types* a search (filtered list shifted) and
   // honour ArrowUp's "land on last item" intent. Do NOT reset on bare
@@ -455,8 +446,7 @@ export function useFilterTokens<const T extends FilterSchema>(
       next[activeCategory] = item.key;
     } else if (def.type === 'date' && def.presets) {
       if (item.key === '__custom_date__') {
-        setMode('input');
-        setInputType('date');
+        setState({ mode: 'input', category: activeCategory, inputType: 'date' });
         setSearch('');
         return;
       }
@@ -490,10 +480,10 @@ export function useFilterTokens<const T extends FilterSchema>(
     // → closed).
     if (e.key === 'Escape' && e.defaultPrevented) return;
 
-    if (mode === 'input' && inputType === 'text' && activeCategory) {
+    if (state.mode === 'input' && state.inputType === 'text') {
       if (e.key === 'Enter' && search.trim() && !e.nativeEvent.isComposing) {
         e.preventDefault();
-        emitChange({ ...values, [activeCategory]: search.trim() });
+        emitChange({ ...values, [state.category]: search.trim() });
         openCategories();
       } else if (e.key === 'Escape') {
         e.preventDefault();
@@ -502,7 +492,7 @@ export function useFilterTokens<const T extends FilterSchema>(
       return;
     }
 
-    if (mode === 'input' && (inputType === 'date' || inputType === 'number')) {
+    if (state.mode === 'input' && (state.inputType === 'date' || state.inputType === 'number')) {
       if (e.key === 'Escape') { e.preventDefault(); goBack(); }
       return;
     }
@@ -556,34 +546,25 @@ export function useFilterTokens<const T extends FilterSchema>(
     // Typing in a panel mode (date / number) means the user is searching for
     // a different filter, not entering panel data. Bounce back to categories
     // so the typed text actually drives a visible search.
-    if (mode === 'closed' || (mode === 'input' && inputType !== 'text')) {
-      setMode('categories');
-      setInputType(null);
-      setActiveCategory(null);
+    if (state.mode === 'closed' || (state.mode === 'input' && state.inputType !== 'text')) {
+      setState({ mode: 'categories' });
     }
   }
 
   function handleFocus() {
-    if (mode === 'closed') openCategories();
+    if (state.mode === 'closed') openCategories();
   }
 
   // ── Return ─────────────────────────────────
 
-  const inputPlaceholder = mode === 'input' && inputType === 'text' && activeCategory
-    ? (schema[activeCategory]?.type === 'text'
-        ? (schema[activeCategory] as { placeholder?: string }).placeholder
-        : undefined) ?? `Type ${schema[activeCategory]?.label}...`
-    : mode === 'values' && activeCategory && schema[activeCategory]
-      ? `Search ${schema[activeCategory].label}...`
-      : placeholder;
-
-  // Project internal state into the public discriminated union. The branches
-  // mirror the invariants enforced by the transition helpers above.
-  const dropdownState: DropdownState =
-    mode === 'closed' ? { mode: 'closed' } :
-    mode === 'categories' ? { mode: 'categories' } :
-    mode === 'values' ? { mode: 'values', category: activeCategory! } :
-    { mode: 'input', category: activeCategory!, inputType: inputType! };
+  const inputPlaceholder =
+    state.mode === 'input' && state.inputType === 'text'
+      ? (schema[state.category]?.type === 'text'
+          ? (schema[state.category] as { placeholder?: string }).placeholder
+          : undefined) ?? `Type ${schema[state.category]?.label}...`
+      : state.mode === 'values' && schema[state.category]
+        ? `Search ${schema[state.category].label}...`
+        : placeholder;
 
   return {
     tokens,
@@ -619,9 +600,9 @@ export function useFilterTokens<const T extends FilterSchema>(
       highlightedIndex,
       highlightedItem: items[highlightedIndex] ?? null,
       setHighlightedIndex,
-      state: dropdownState,
+      state,
     },
-    open: () => { if (mode === 'closed') openCategories(); },
+    open: () => { if (state.mode === 'closed') openCategories(); },
     openCategory: (key: string) => { selectCategory(key); },
     clear: () => { emitChange({}); setDateLabels({}); close(); },
     setDateValue: (category: string, dateValue: { from?: string; to?: string } | { date: string }) => {
