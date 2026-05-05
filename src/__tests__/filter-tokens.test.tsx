@@ -402,6 +402,30 @@ describe('FilterTokens date presets', () => {
     expect(period.to).toBeUndefined();
   });
 
+  it('disables Apply when the typed range is inverted (from > to)', async () => {
+    // Used to silently auto-correct: typing End < Start moved the value to
+    // Start and cleared End; typing Start > End cleared End. Both surprised
+    // the user. Now we trust the typed values and just disable Apply.
+    const user = userEvent.setup();
+    render(<Setup />);
+    await user.click(getInput());
+    await user.click(screen.getByText('Period'));
+    await user.click(screen.getByText('Custom range...'));
+    const startInput = screen.getByLabelText('Start date and time');
+    const endInput = screen.getByLabelText('End date and time');
+    await user.clear(startInput);
+    await user.type(startInput, '04/20/2026');
+    await user.tab();
+    await user.clear(endInput);
+    await user.type(endInput, '04/10/2026');
+    await user.tab();
+    // Both inputs preserve their typed values
+    expect((startInput as HTMLInputElement).value).toContain('04/20/2026');
+    expect((endInput as HTMLInputElement).value).toContain('04/10/2026');
+    // Apply is disabled because from > to
+    expect(screen.getByRole('button', { name: 'Apply' })).toBeDisabled();
+  });
+
   it('highlights the End day on the calendar when re-editing a "Until X" filter', async () => {
     // Was: rangeModifiers returned {} when from was undefined, so the End
     // day got no visual treatment at all. Now End-only sets range_end.

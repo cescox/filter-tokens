@@ -152,8 +152,12 @@ export function RangeCalendarPanel({
               setFrom(undefined);
               return;
             }
+            // Trust whatever the user typed. Auto-clearing End when the
+            // new Start fell after it was destructive — the user may have
+            // been refining Start with End next on the to-do list. The
+            // Apply button is disabled when the range is invalid (from >
+            // to), giving the user a clear cue without nuking their data.
             setFrom(d);
-            if (to && d > to) setTo(undefined);
             setMonth(d);
           }}
           onEnter={() => {
@@ -176,12 +180,11 @@ export function RangeCalendarPanel({
             if (showTime && d.getHours() === 0 && d.getMinutes() === 0) {
               d.setHours(23, 59, 59, 999);
             }
-            if (from && d < from) {
-              setFrom(d);
-              setTo(undefined);
-            } else {
-              setTo(d);
-            }
+            // Trust whatever the user typed — even if it's earlier than
+            // Start. Auto-swapping to Start was confusing (typed value
+            // ended up in a different field). Apply checks for empty,
+            // and the consumer can validate range integrity.
+            setTo(d);
             setMonth(d);
           }}
           inputRef={endInputRef}
@@ -206,7 +209,14 @@ export function RangeCalendarPanel({
         <Button variant="ghost" onClick={onCancel}>
           Cancel
         </Button>
-        <Button disabled={!from && !to} onClick={handleApply}>
+        <Button
+          // Apply is disabled when the user has nothing to commit OR when
+          // the typed range is inverted (from > to). The user is free to
+          // type Start later than End while editing — the disabled state
+          // tells them why Apply isn't moving forward.
+          disabled={(!from && !to) || (from !== undefined && to !== undefined && from > to)}
+          onClick={handleApply}
+        >
           Apply
         </Button>
       </div>
