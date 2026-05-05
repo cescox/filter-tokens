@@ -446,7 +446,7 @@ export function useFilterTokens<const T extends FilterSchema>(
 
   function handleKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
     if (mode === 'text-entry' && activeCategory) {
-      if (e.key === 'Enter' && search.trim()) {
+      if (e.key === 'Enter' && search.trim() && !e.nativeEvent.isComposing) {
         e.preventDefault();
         emitChange({ ...values, [activeCategory]: search.trim() });
         afterValueSelected();
@@ -485,7 +485,7 @@ export function useFilterTokens<const T extends FilterSchema>(
     } else if (e.key === 'Escape') {
       e.preventDefault();
       goBack();
-    } else if (e.key === 'Backspace' && !search) {
+    } else if (e.key === 'Backspace' && !search && !e.nativeEvent.isComposing) {
       if (selectedTokenIndex !== null) {
         tokens[selectedTokenIndex]?.remove();
         setSelectedTokenIndex(null);
@@ -518,8 +518,8 @@ export function useFilterTokens<const T extends FilterSchema>(
     ? (schema[activeCategory]?.type === 'text'
         ? (schema[activeCategory] as { placeholder?: string }).placeholder
         : undefined) ?? `Type ${schema[activeCategory]?.label}...`
-    : tokens.length > 0
-      ? ''
+    : mode === 'values' && activeCategory && schema[activeCategory]
+      ? `Search ${schema[activeCategory].label}...`
       : placeholder;
 
   return {

@@ -5,8 +5,6 @@ import {
   ChevronLeftIcon,
   ChevronRightIcon,
   LoaderCircleIcon,
-  SearchIcon,
-  XIcon,
 } from "lucide-react";
 import type { Locale } from "date-fns";
 import { Popover } from "@base-ui/react/popover";
@@ -16,10 +14,10 @@ import {
   type FilterTokensProps,
 } from "filter-tokens";
 import { cn } from "filter-tokens/lib/utils";
-import { FilterTokenChip } from "./parts/chip";
 import { ItemIndicator } from "./parts/item-indicator";
 import { RangeCalendarPanel, SingleCalendarPanel } from "./parts/calendar-panel";
 import { NumberEntryPanel } from "./parts/number-panel";
+import { FilterTokensTrigger } from "./parts/trigger";
 
 /* ─── Types ────────────────────────────────────────────────────────────────── */
 
@@ -47,7 +45,6 @@ function FilterTokens<const T extends FilterSchema>({
     placeholder,
     locale: dateLocale?.code,
   });
-  const searchInputRef = React.useRef<HTMLInputElement>(null);
   const triggerRef = React.useRef<HTMLDivElement>(null);
   const listboxId = React.useId();
   const popoverContentId = React.useId();
@@ -65,100 +62,31 @@ function FilterTokens<const T extends FilterSchema>({
   const isMultiSelect =
     activeDef?.type === "select" && activeDef.multi === true;
 
-  React.useEffect(() => {
-    if (ft.dropdown.open && !isDateEntry && !isNumberEntry) {
-      requestAnimationFrame(() => searchInputRef.current?.focus());
-    }
-  }, [ft.dropdown.open, mode, isDateEntry, isNumberEntry]);
-
-  const searchPlaceholder = isTextEntry
-    ? `Type ${activeLabel ?? "value"}...`
-    : isValuesMode
-      ? `Search ${activeLabel ?? ""}...`
-      : "Search filters...";
-
   return (
     <Popover.Root
       open={ft.dropdown.open}
-      onOpenChange={(open) => { if (!open) ft.dropdown.close(); }}
+      onOpenChange={(open, details) => {
+        if (open) return;
+        // The combobox input lives in the trigger area, not in the popover
+        // popup. When focus or pointer interactions land on it (after a chip
+        // click, an option select, etc.), Base UI would otherwise treat that
+        // as outside the popover and request close. Cancel any close that
+        // originates from inside our trigger surface.
+        const target = details?.event?.target as Element | null;
+        if (target?.closest?.('[data-slot="filter-tokens-trigger"]')) {
+          details?.cancel?.();
+          return;
+        }
+        ft.dropdown.close();
+      }}
     >
-      <div data-slot="filter-tokens" {...props}>
-        <div
-          data-slot="filter-tokens-announcement"
-          role="status"
-          aria-live="polite"
-          className="sr-only"
-        >
-          {ft.announcement}
-        </div>
-        <div
-          ref={triggerRef}
-          data-slot="filter-tokens-trigger"
-          data-disabled={disabled || undefined}
-          role="button"
-          tabIndex={disabled ? -1 : 0}
-          aria-expanded={ft.dropdown.open}
-          aria-haspopup="dialog"
-          aria-controls={ft.dropdown.open ? popoverContentId : undefined}
-          className={cn(
-            "flex min-h-10 w-full flex-wrap items-center gap-1.5 rounded-lg border border-input bg-background px-3 py-2 text-sm cursor-text",
-            "focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
-            disabled && "cursor-not-allowed opacity-50",
-            className,
-          )}
-          onClick={() => { if (!disabled) ft.open(); }}
-          onKeyDown={(e) => {
-            if (!disabled && (e.key === "Enter" || e.key === " " || e.key === "ArrowDown")) {
-              e.preventDefault();
-              ft.open();
-            }
-          }}
-        >
-          {ft.tokens.map((token) => (
-            <FilterTokenChip
-              key={token.id}
-              category={token.category}
-              label={token.label}
-              displayValue={token.displayValue}
-              onRemove={() => {
-                token.remove();
-                requestAnimationFrame(() => triggerRef.current?.focus());
-              }}
-              onClick={() => ft.openCategory(token.category)}
-              disabled={disabled}
-            />
-          ))}
-
-          <span
-            data-slot="filter-tokens-placeholder"
-            className={cn(
-              "select-none",
-              ft.tokens.length === 0
-                ? "text-muted-foreground"
-                : "text-muted-foreground/40 text-xs",
-            )}
-          >
-            {ft.tokens.length === 0 ? placeholder : "Filter..."}
-          </span>
-
-          {ft.tokens.length > 0 && (
-            <div className="ml-auto flex items-center">
-              <button
-                type="button"
-                data-slot="filter-tokens-clear"
-                className="shrink-0 rounded-sm p-0.5 text-muted-foreground/60 transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  ft.clear();
-                }}
-                aria-label="Clear all filters"
-                disabled={disabled}
-              >
-                <XIcon className="size-4" />
-              </button>
-            </div>
-          )}
-        </div>
+      <div ref={triggerRef} data-slot="filter-tokens" {...props}>
+        <FilterTokensTrigger
+          ft={ft}
+          listboxId={listboxId}
+          disabled={disabled}
+          className={className}
+        />
       </div>
 
       <Popover.Portal>
@@ -172,9 +100,9 @@ function FilterTokens<const T extends FilterSchema>({
             id={popoverContentId}
             data-slot="filter-tokens-dropdown"
             data-state={mode}
-            className="min-w-(--anchor-width) rounded-lg border border-border bg-popover p-0 text-popover-foreground shadow-lg outline-none"
+            className="max-w-[480px] min-w-(--anchor-width) rounded-lg border border-border bg-popover p-0 text-popover-foreground shadow-lg outline-none"
             initialFocus={false}
-            finalFocus={triggerRef}
+            finalFocus={ft.inputProps.ref}
             onKeyDown={(e) => {
               if (e.key === "Escape" && (isValuesMode || isTextEntry || isDateEntry || isNumberEntry)) {
                 e.preventDefault();
@@ -204,33 +132,6 @@ function FilterTokens<const T extends FilterSchema>({
                 <span className="text-xs font-medium text-muted-foreground">
                   {activeLabel}
                 </span>
-              </div>
-            )}
-
-            {/* Search */}
-            {!isDateEntry && !isNumberEntry && (
-              <div className="flex items-center gap-2 border-b border-border px-3 py-2">
-                <SearchIcon className="size-4 shrink-0 text-muted-foreground" />
-                <input
-                  ref={searchInputRef}
-                  data-slot="filter-tokens-search"
-                  className="flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
-                  placeholder={searchPlaceholder}
-                  value={ft.inputProps.value}
-                  onChange={ft.inputProps.onChange}
-                  onKeyDown={ft.inputProps.onKeyDown}
-                  role="combobox"
-                  aria-label={searchPlaceholder}
-                  aria-expanded={true}
-                  aria-controls={listboxId}
-                  aria-activedescendant={
-                    ft.dropdown.highlightedIndex >= 0 &&
-                    ft.dropdown.items[ft.dropdown.highlightedIndex]
-                      ? `${listboxId}-item-${ft.dropdown.items[ft.dropdown.highlightedIndex].key}`
-                      : undefined
-                  }
-                  aria-autocomplete="list"
-                />
               </div>
             )}
 

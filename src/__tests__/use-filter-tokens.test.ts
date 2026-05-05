@@ -172,11 +172,12 @@ describe('useFilterTokens', () => {
   });
 
   describe('keyboard navigation', () => {
-    function keyDown(result: any, key: string) {
+    function keyDown(result: any, key: string, opts?: { isComposing?: boolean }) {
       act(() => {
         result.current.inputProps.onKeyDown({
           key,
           preventDefault: vi.fn(),
+          nativeEvent: { isComposing: opts?.isComposing ?? false },
         } as any);
       });
     }
@@ -605,11 +606,12 @@ describe('useFilterTokens', () => {
   });
 
   describe('backspace token selection', () => {
-    function keyDown(result: any, key: string) {
+    function keyDown(result: any, key: string, opts?: { isComposing?: boolean }) {
       act(() => {
         result.current.inputProps.onKeyDown({
           key,
           preventDefault: vi.fn(),
+          nativeEvent: { isComposing: opts?.isComposing ?? false },
         } as any);
       });
     }
@@ -634,6 +636,17 @@ describe('useFilterTokens', () => {
       rerender({ value: { status: 'error' } });
       // selectedTokenIndex must clamp to valid range; Backspace must not crash
       expect(() => keyDown(result, 'Backspace')).not.toThrow();
+    });
+
+    it('does NOT remove a token when Backspace fires during IME composition', () => {
+      const { result, onChange } = setup({ status: 'error' });
+      act(() => result.current.inputProps.onFocus());
+      // Two consecutive Backspaces would normally select then remove. With
+      // isComposing=true both must be no-ops so that Korean/Japanese/etc.
+      // input composition can use Backspace to delete composing characters.
+      keyDown(result, 'Backspace', { isComposing: true });
+      keyDown(result, 'Backspace', { isComposing: true });
+      expect(onChange).not.toHaveBeenCalled();
     });
   });
 

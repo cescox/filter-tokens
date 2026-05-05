@@ -1,8 +1,17 @@
-import { render, screen, within } from '@testing-library/react';
+import { render, screen, within, act } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, it, expect } from 'vitest';
 import { FilterTokens } from '../components/filter-tokens';
 import React from 'react';
+
+// Pattern A focus management runs in requestAnimationFrame so the chip-remove
+// re-render commits before we move focus. Tests need to wait for that frame
+// AND wrap the resulting state updates (handleFocus → openCategories) in act.
+async function flushFocus() {
+  await act(async () => {
+    await new Promise<void>((r) => requestAnimationFrame(() => r()));
+  });
+}
 
 const filters = {
   status: {
@@ -64,12 +73,16 @@ function getValue() {
   return JSON.parse(screen.getByTestId('value').textContent || '{}');
 }
 
+function getInput() {
+  return screen.getByRole('combobox') as HTMLInputElement;
+}
+
 // ── Rendering ───────────────────────────────────
 
 describe('FilterTokens rendering', () => {
   it('renders trigger with placeholder when empty', () => {
     render(<Setup />);
-    expect(screen.getByRole('button', { name: 'Filter...' })).toBeInTheDocument();
+    expect(getInput()).toBeInTheDocument();
   });
 
   it('renders tokens from initial value', () => {
@@ -82,11 +95,12 @@ describe('FilterTokens rendering', () => {
     expect(screen.getByLabelText('Remove Tags: Bug, Feature')).toBeInTheDocument();
   });
 
-  it('keeps a trailing "Filter..." hint visible when tokens exist', () => {
+  it('keeps "Filter..." input placeholder visible when tokens exist', () => {
     render(<Setup initialValue={{ status: 'error' }} />);
-    const placeholder = document.querySelector('[data-slot="filter-tokens-placeholder"]');
-    expect(placeholder).not.toBeNull();
-    expect(placeholder?.textContent).toBe('Filter...');
+    // Pattern A: the bordered wrapper hosts a real <input> as a flex sibling
+    // to the chips. The input's placeholder serves as the visual hint —
+    // there's no separate placeholder span anymore.
+    expect(getInput()).toHaveAttribute('placeholder', 'Filter...');
   });
 
   it('renders clear all button when tokens exist', () => {
@@ -116,18 +130,57 @@ describe('FilterTokens popover', () => {
   it('opens categories on trigger click', async () => {
     const user = userEvent.setup();
     render(<Setup />);
-    await user.click(screen.getByRole('button', { name: 'Filter...' }));
+    await user.click(getInput());
     expect(screen.getByText('Status')).toBeInTheDocument();
     expect(screen.getByText('Tags')).toBeInTheDocument();
     expect(screen.getByText('Period')).toBeInTheDocument();
     expect(screen.getByText('Search')).toBeInTheDocument();
   });
 
-  it('shows search input inside popover', async () => {
+  it('exposes a single combobox — the outer input — not a separate search input inside the popover', async () => {
     const user = userEvent.setup();
     render(<Setup />);
-    await user.click(screen.getByRole('button', { name: 'Filter...' }));
-    expect(screen.getByLabelText('Search filters...')).toBeInTheDocument();
+    await user.click(getInput());
+    // Pattern A: the input is on the bordered wrapper, not duplicated inside
+    // the popover. There must be exactly one combobox.
+    expect(screen.getAllByRole('combobox')).toHaveLength(1);
+  });
+});
+
+// ── Pattern A trigger ───────────────────────────
+
+describe('FilterTokens Pattern A trigger', () => {
+  it('focuses the input when clicking empty wrapper space (not on a chip)', async () => {
+    const user = userEvent.setup();
+    render(<Setup initialValue={{ status: 'error' }} />);
+    const wrapper = document.querySelector(
+      '[data-slot="filter-tokens-trigger"]',
+    ) as HTMLElement;
+    expect(wrapper).not.toBeNull();
+    // Click somewhere on the wrapper that isn't a chip / clear / input —
+    // the wrapper itself is fine since chips have their own bounding box.
+    await user.click(wrapper);
+    expect(getInput()).toHaveFocus();
+  });
+
+  it('moves focus to the next chip after removing a middle chip', async () => {
+    const user = userEvent.setup();
+    render(
+      <Setup initialValue={{ status: 'error', tags: ['bug'], search: 'x' }} />,
+    );
+    // Three tokens; remove the middle one (Tags). Focus should land on
+    // the chip that's now at the same index — the Search chip.
+    await user.click(screen.getByLabelText('Remove Tags: Bug'));
+    await flushFocus();
+    expect(screen.getByLabelText('Search: x. Click to edit.')).toHaveFocus();
+  });
+
+  it('falls back to the input when removing the last chip', async () => {
+    const user = userEvent.setup();
+    render(<Setup initialValue={{ status: 'error' }} />);
+    await user.click(screen.getByLabelText('Remove Status: Error'));
+    await flushFocus();
+    expect(getInput()).toHaveFocus();
   });
 });
 
@@ -137,7 +190,7 @@ describe('FilterTokens single select', () => {
   it('shows values after clicking a category', async () => {
     const user = userEvent.setup();
     render(<Setup />);
-    await user.click(screen.getByRole('button', { name: 'Filter...' }));
+    await user.click(getInput());
     await user.click(screen.getByText('Status'));
     expect(screen.getByText('Success')).toBeInTheDocument();
     expect(screen.getByText('Error')).toBeInTheDocument();
@@ -147,7 +200,7 @@ describe('FilterTokens single select', () => {
   it('creates token on value selection and returns to categories', async () => {
     const user = userEvent.setup();
     render(<Setup />);
-    await user.click(screen.getByRole('button', { name: 'Filter...' }));
+    await user.click(getInput());
     await user.click(screen.getByText('Status'));
     await user.click(screen.getByText('Error'));
 
@@ -180,7 +233,7 @@ describe('FilterTokens multi select', () => {
   it('creates combined token and stays open', async () => {
     const user = userEvent.setup();
     render(<Setup />);
-    await user.click(screen.getByRole('button', { name: 'Filter...' }));
+    await user.click(getInput());
     await user.click(screen.getByText('Tags'));
     await user.click(screen.getByText('Bug'));
     await user.click(screen.getByText('Feature'));
@@ -214,9 +267,9 @@ describe('FilterTokens text entry', () => {
   it('creates token on Enter', async () => {
     const user = userEvent.setup();
     render(<Setup />);
-    await user.click(screen.getByRole('button', { name: 'Filter...' }));
+    await user.click(getInput());
     await user.click(screen.getByText('Search'));
-    await user.type(screen.getByLabelText('Type Search...'), 'timeout{Enter}');
+    await user.type(getInput(), 'timeout{Enter}');
     expect(getValue()).toEqual({ search: 'timeout' });
   });
 
@@ -224,7 +277,7 @@ describe('FilterTokens text entry', () => {
     const user = userEvent.setup();
     render(<Setup initialValue={{ search: 'timeout' }} />);
     await user.click(screen.getByLabelText('Search: timeout. Click to edit.'));
-    const input = screen.getByLabelText('Type Search...');
+    const input = getInput();
     expect(input).toHaveValue('timeout');
   });
 });
@@ -235,7 +288,7 @@ describe('FilterTokens date presets', () => {
   it('shows presets and Custom range item', async () => {
     const user = userEvent.setup();
     render(<Setup />);
-    await user.click(screen.getByRole('button', { name: 'Filter...' }));
+    await user.click(getInput());
     await user.click(screen.getByText('Period'));
     expect(screen.getByText('Last hour')).toBeInTheDocument();
     expect(screen.getByText('Last 24h')).toBeInTheDocument();
@@ -245,7 +298,7 @@ describe('FilterTokens date presets', () => {
   it('creates token with preset label on selection', async () => {
     const user = userEvent.setup();
     render(<Setup />);
-    await user.click(screen.getByRole('button', { name: 'Filter...' }));
+    await user.click(getInput());
     await user.click(screen.getByText('Period'));
     await user.click(screen.getByText('Last 24h'));
     expect(getValue().period).toBeDefined();
@@ -265,7 +318,7 @@ describe('FilterTokens date presets', () => {
   it('applies "since X" range with only start date set', async () => {
     const user = userEvent.setup();
     render(<Setup />);
-    await user.click(screen.getByRole('button', { name: 'Filter...' }));
+    await user.click(getInput());
     await user.click(screen.getByText('Period'));
     await user.click(screen.getByText('Custom range...'));
     // Type only the Start date — leave End empty
@@ -283,7 +336,7 @@ describe('FilterTokens date presets', () => {
   it('applies "until X" range with only end date set', async () => {
     const user = userEvent.setup();
     render(<Setup />);
-    await user.click(screen.getByRole('button', { name: 'Filter...' }));
+    await user.click(getInput());
     await user.click(screen.getByText('Period'));
     await user.click(screen.getByText('Custom range...'));
     // Type only the End date — leave Start empty
@@ -307,7 +360,7 @@ describe('FilterTokens date presets', () => {
   it('shows presets when re-clicking preset date pill', async () => {
     const user = userEvent.setup();
     render(<Setup />);
-    await user.click(screen.getByRole('button', { name: 'Filter...' }));
+    await user.click(getInput());
     await user.click(screen.getByText('Period'));
     await user.click(screen.getByText('Last 24h'));
     // Now re-click the Period pill (has preset label)
@@ -323,8 +376,8 @@ describe('FilterTokens search', () => {
   it('filters categories by text', async () => {
     const user = userEvent.setup();
     render(<Setup />);
-    await user.click(screen.getByRole('button', { name: 'Filter...' }));
-    await user.type(screen.getByLabelText('Search filters...'), 'sta');
+    await user.click(getInput());
+    await user.type(getInput(), 'sta');
     expect(screen.getByText('Status')).toBeInTheDocument();
     expect(screen.queryByText('Tags')).not.toBeInTheDocument();
     expect(screen.queryByText('Period')).not.toBeInTheDocument();
@@ -333,8 +386,8 @@ describe('FilterTokens search', () => {
   it('shows no results for unmatched search', async () => {
     const user = userEvent.setup();
     render(<Setup />);
-    await user.click(screen.getByRole('button', { name: 'Filter...' }));
-    await user.type(screen.getByLabelText('Search filters...'), 'zzzzz');
+    await user.click(getInput());
+    await user.type(getInput(), 'zzzzz');
     expect(screen.getByText('No results found')).toBeInTheDocument();
   });
 });
@@ -367,7 +420,7 @@ describe('FilterTokens announcements', () => {
   it('announces add when a token is added', async () => {
     const user = userEvent.setup();
     render(<Setup />);
-    await user.click(screen.getByRole('button', { name: 'Filter...' }));
+    await user.click(getInput());
     await user.click(screen.getByText('Status'));
     await user.click(screen.getByText('Error'));
     expect(getAnnouncement()?.textContent).toContain('Added Status: Error');
@@ -383,7 +436,7 @@ describe('FilterTokens announcements', () => {
   it('announces per-value adds for multi-select', async () => {
     const user = userEvent.setup();
     render(<Setup />);
-    await user.click(screen.getByRole('button', { name: 'Filter...' }));
+    await user.click(getInput());
     await user.click(screen.getByText('Tags'));
     await user.click(screen.getByText('Bug'));
     expect(getAnnouncement()?.textContent).toContain('Added Tags: Bug');
@@ -395,7 +448,7 @@ describe('FilterTokens announcements', () => {
 // ── Disabled State ──────────────────────────────
 
 describe('FilterTokens disabled', () => {
-  it('prevents opening when disabled', () => {
+  it('disables the input when disabled', () => {
     render(
       <FilterTokens
         filters={filters}
@@ -404,8 +457,7 @@ describe('FilterTokens disabled', () => {
         disabled
       />,
     );
-    const trigger = screen.getByRole('button', { name: 'Filter...' });
-    expect(trigger).toHaveAttribute('tabindex', '-1');
+    expect(getInput()).toBeDisabled();
   });
 });
 
@@ -415,7 +467,7 @@ describe('FilterTokens back button', () => {
   it('shows back button in values mode', async () => {
     const user = userEvent.setup();
     render(<Setup />);
-    await user.click(screen.getByRole('button', { name: 'Filter...' }));
+    await user.click(getInput());
     await user.click(screen.getByText('Status'));
     expect(screen.getByLabelText('Back to filter categories')).toBeInTheDocument();
   });
@@ -423,7 +475,7 @@ describe('FilterTokens back button', () => {
   it('goes back to categories on back button click', async () => {
     const user = userEvent.setup();
     render(<Setup />);
-    await user.click(screen.getByRole('button', { name: 'Filter...' }));
+    await user.click(getInput());
     await user.click(screen.getByText('Status'));
     await user.click(screen.getByLabelText('Back to filter categories'));
     expect(screen.getByText('Tags')).toBeInTheDocument();
@@ -437,7 +489,7 @@ describe('FilterTokens ARIA', () => {
   it('sets aria-multiselectable on listbox in multi-select mode', async () => {
     const user = userEvent.setup();
     render(<Setup />);
-    await user.click(screen.getByRole('button', { name: 'Filter...' }));
+    await user.click(getInput());
     await user.click(screen.getByText('Tags'));
     const listbox = screen.getByRole('listbox');
     expect(listbox).toHaveAttribute('aria-multiselectable', 'true');
@@ -446,7 +498,7 @@ describe('FilterTokens ARIA', () => {
   it('does not set aria-multiselectable in single-select mode', async () => {
     const user = userEvent.setup();
     render(<Setup />);
-    await user.click(screen.getByRole('button', { name: 'Filter...' }));
+    await user.click(getInput());
     await user.click(screen.getByText('Status'));
     const listbox = screen.getByRole('listbox');
     expect(listbox).not.toHaveAttribute('aria-multiselectable');
@@ -485,7 +537,7 @@ describe('FilterTokens async loading', () => {
   it('shows loading spinner while async options load', async () => {
     const user = userEvent.setup();
     render(<AsyncSetup />);
-    await user.click(screen.getByRole('button', { name: 'Filter...' }));
+    await user.click(getInput());
     await user.click(screen.getByText('City'));
     expect(document.querySelector('[data-slot="filter-tokens-loading"]')).not.toBeNull();
     expect(screen.queryByText('No results found')).not.toBeInTheDocument();
@@ -494,7 +546,7 @@ describe('FilterTokens async loading', () => {
   it('shows options after async resolution', async () => {
     const user = userEvent.setup();
     render(<AsyncSetup />);
-    await user.click(screen.getByRole('button', { name: 'Filter...' }));
+    await user.click(getInput());
     await user.click(screen.getByText('City'));
     await screen.findByText('New York');
     expect(screen.getByText('Los Angeles')).toBeInTheDocument();
@@ -529,7 +581,7 @@ describe('FilterTokens async loading', () => {
     }
     const user = userEvent.setup();
     render(<FailingSetup />);
-    await user.click(screen.getByRole('button', { name: 'Filter...' }));
+    await user.click(getInput());
     await user.click(screen.getByText('City'));
     // Error UI appears
     await screen.findByText('Failed to load options');
@@ -547,7 +599,7 @@ describe('FilterTokens number entry', () => {
   it('shows min/max inputs when clicking a number category', async () => {
     const user = userEvent.setup();
     render(<Setup />);
-    await user.click(screen.getByRole('button', { name: 'Filter...' }));
+    await user.click(getInput());
     await user.click(screen.getByText('Amount'));
     expect(screen.getByLabelText(/Minimum value/)).toBeInTheDocument();
     expect(screen.getByLabelText(/Maximum value/)).toBeInTheDocument();
@@ -556,7 +608,7 @@ describe('FilterTokens number entry', () => {
   it('creates token on Apply with min and max', async () => {
     const user = userEvent.setup();
     render(<Setup />);
-    await user.click(screen.getByRole('button', { name: 'Filter...' }));
+    await user.click(getInput());
     await user.click(screen.getByText('Amount'));
     await user.type(screen.getByLabelText(/Minimum value/), '10');
     await user.type(screen.getByLabelText(/Maximum value/), '500');
@@ -567,7 +619,7 @@ describe('FilterTokens number entry', () => {
   it('creates token with min only', async () => {
     const user = userEvent.setup();
     render(<Setup />);
-    await user.click(screen.getByRole('button', { name: 'Filter...' }));
+    await user.click(getInput());
     await user.click(screen.getByText('Amount'));
     await user.type(screen.getByLabelText(/Minimum value/), '25');
     await user.click(screen.getByRole('button', { name: 'Apply' }));
@@ -582,7 +634,7 @@ describe('FilterTokens number entry', () => {
   it('Cancel discards entry without committing', async () => {
     const user = userEvent.setup();
     render(<Setup />);
-    await user.click(screen.getByRole('button', { name: 'Filter...' }));
+    await user.click(getInput());
     await user.click(screen.getByText('Amount'));
     await user.type(screen.getByLabelText(/Minimum value/), '42');
     await user.click(screen.getByRole('button', { name: 'Cancel' }));
