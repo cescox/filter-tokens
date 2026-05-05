@@ -637,6 +637,8 @@ export function useFilterTokens<const T extends FilterSchema>(
       retry: () => setRetryToken((n) => n + 1),
       items,
       select: selectItem,
+      open: () => { if (state.mode === 'closed') openCategories(); },
+      openFilter: (key: string) => { selectCategory(key); },
       close,
       goBack,
       highlightedIndex,
@@ -644,8 +646,6 @@ export function useFilterTokens<const T extends FilterSchema>(
       setHighlightedIndex,
       state,
     },
-    open: () => { if (state.mode === 'closed') openCategories(); },
-    openCategory: (key: string) => { selectCategory(key); },
     clear: () => { emitChange({}); setDateLabels({}); close(); },
     applyDate: (category: string, value: { from?: string; to?: string } | { date: string }) => {
       setDateLabels((prev) => { const n = { ...prev }; delete n[category]; return n; });

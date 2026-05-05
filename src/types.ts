@@ -167,6 +167,10 @@ export interface FilterTokensDropdown {
   retry: () => void;
   items: FilterTokensDropdownItem[];
   select: (item: FilterTokensDropdownItem) => void;
+  /** Open the popup at the top-level filter list (no-op when already open). */
+  open: () => void;
+  /** Open the popup directly into a specific filter's values (or its input panel). */
+  openFilter: (key: string) => void;
   close: () => void;
   goBack: () => void;
   highlightedIndex: number;
@@ -197,8 +201,7 @@ export interface FilterTokensReturn<T extends FilterSchema> {
    * cascades to every render site.
    */
   messages: FilterTokensMessages;
-  open: () => void;
-  openCategory: (key: string) => void;
+  /** Removes every filter and closes the popup. */
   clear: () => void;
   /** Commits a date value (called by the calendar panel's Apply button). */
   applyDate: (category: string, value: { from?: string; to?: string } | { date: string }) => void;

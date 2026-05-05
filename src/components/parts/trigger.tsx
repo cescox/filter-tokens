@@ -121,7 +121,7 @@ export function Trigger<T extends FilterSchema>({
                 (nextChip ?? prevChip ?? ft.inputProps.ref.current)?.focus();
               });
             }}
-            onClick={() => ft.openCategory(token.category)}
+            onClick={() => ft.dropdown.openFilter(token.category)}
             onPrevious={
               index > 0
                 ? () => chipRefs.current[index - 1]?.focus()
@@ -155,7 +155,7 @@ export function Trigger<T extends FilterSchema>({
             // Focus alone won't reopen the popover after ESC-from-categories
             // (the input keeps focus, so onFocus doesn't re-fire). A click
             // on the input bar always opens.
-            if (!disabled && !ft.dropdown.isOpen) ft.open();
+            if (!disabled && !ft.dropdown.isOpen) ft.dropdown.open();
           }}
           onKeyDown={(e) => {
             // ArrowLeft on an empty input with the cursor at position 0:

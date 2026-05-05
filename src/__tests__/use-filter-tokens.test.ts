@@ -323,7 +323,7 @@ describe('useFilterTokens', () => {
   describe('text re-edit', () => {
     it('pre-fills input with current text value on openCategory', () => {
       const { result } = setup({ search: 'timeout' });
-      act(() => result.current.openCategory('search'));
+      act(() => result.current.dropdown.openFilter('search'));
       expect(result.current.dropdown.state).toMatchObject({ mode: 'input', inputType: 'text' });
       expect(result.current.inputProps.value).toBe('timeout');
     });
@@ -361,13 +361,13 @@ describe('useFilterTokens', () => {
 
     it('goes to date-entry when clicking date pill with custom value', () => {
       const { result } = setup({ period: { from: '2026-04-05T00:00:00Z', to: '2026-04-15T23:59:59Z' } });
-      act(() => result.current.openCategory('period'));
+      act(() => result.current.dropdown.openFilter('period'));
       expect(result.current.dropdown.state).toMatchObject({ mode: 'input', inputType: 'date' });
     });
 
     it('goes back to presets from date-entry when presets exist', () => {
       const { result } = setup({ period: { from: '2026-04-05T00:00:00Z', to: '2026-04-15T23:59:59Z' } });
-      act(() => result.current.openCategory('period'));
+      act(() => result.current.dropdown.openFilter('period'));
       expect(result.current.dropdown.state).toMatchObject({ mode: 'input', inputType: 'date' });
       act(() => result.current.dropdown.goBack());
       expect(result.current.dropdown.state.mode).toBe('values');
@@ -462,7 +462,7 @@ describe('useFilterTokens', () => {
 
     it('shows selected state for multi-select items', () => {
       const { result } = setup({ tags: ['bug'] });
-      act(() => result.current.openCategory('tags'));
+      act(() => result.current.dropdown.openFilter('tags'));
       const bugItem = result.current.dropdown.items.find((i) => i.key === 'bug');
       expect(bugItem?.selected).toBe(true);
       const featureItem = result.current.dropdown.items.find((i) => i.key === 'feature');
@@ -473,7 +473,7 @@ describe('useFilterTokens', () => {
       // Was a real UX bug: pick one value via mouse → search filter and
       // listbox stayed narrowed, focus slid into the popover.
       const { result } = setup();
-      act(() => result.current.openCategory('tags'));
+      act(() => result.current.dropdown.openFilter('tags'));
       // Type to filter the listbox
       act(() => {
         result.current.inputProps.onChange({ target: { value: 'bug' } } as any);
@@ -496,7 +496,7 @@ describe('useFilterTokens', () => {
       // Was a real UX bug: re-clicking Status: Failed chip highlighted
       // Succeeded (index 0); pressing Enter silently overwrote Failed.
       const { result } = setup({ status: 'error' });
-      act(() => result.current.openCategory('status'));
+      act(() => result.current.dropdown.openFilter('status'));
       // Status options are [success(0), error(1)]. Should highlight error.
       const items = result.current.dropdown.items;
       const errorIdx = items.findIndex((i) => i.key === 'error');
@@ -507,7 +507,7 @@ describe('useFilterTokens', () => {
   describe('applyDate', () => {
     it('sets date value and closes the popover (Apply commits and dismisses)', () => {
       const { result, onChange } = setup();
-      act(() => result.current.openCategory('period'));
+      act(() => result.current.dropdown.openFilter('period'));
       act(() => {
         result.current.applyDate('period', { from: '2026-04-05T00:00:00Z', to: '2026-04-15T23:59:59Z' });
       });
@@ -713,7 +713,7 @@ describe('useFilterTokens', () => {
 
     it('sets number value and closes the popover (Apply commits and dismisses)', () => {
       const { result, onChange } = setup();
-      act(() => result.current.openCategory('amount'));
+      act(() => result.current.dropdown.openFilter('amount'));
       expect(result.current.dropdown.state).toMatchObject({ mode: 'input', inputType: 'number' });
       act(() => {
         result.current.applyNumber('amount', { min: 10, max: 500 });
@@ -724,7 +724,7 @@ describe('useFilterTokens', () => {
 
     it('goes back from number-entry to categories', () => {
       const { result } = setup();
-      act(() => result.current.openCategory('amount'));
+      act(() => result.current.dropdown.openFilter('amount'));
       expect(result.current.dropdown.state).toMatchObject({ mode: 'input', inputType: 'number' });
       act(() => result.current.dropdown.goBack());
       expect(result.current.dropdown.state.mode).toBe('categories');
