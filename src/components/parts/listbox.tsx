@@ -85,6 +85,15 @@ export function Listbox<T extends FilterSchema>({
         </div>
       )}
 
+      {isTextEntry && (
+        <div
+          data-slot="filter-tokens-text-entry-hint"
+          className="px-2 py-3 text-center text-xs text-muted-foreground"
+        >
+          Press <kbd className="rounded bg-muted px-1 py-0.5 font-mono text-[10px]">Enter</kbd> to apply, <kbd className="rounded bg-muted px-1 py-0.5 font-mono text-[10px]">Esc</kbd> to cancel
+        </div>
+      )}
+
       {items.map((item, index) => {
         const isHighlighted = index === highlightedIndex;
         return (

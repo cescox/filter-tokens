@@ -30,10 +30,17 @@ export const Chip = React.forwardRef<
       ref={ref}
       data-slot="filter-tokens-token"
       data-category={category}
+      data-disabled={disabled || undefined}
       role="button"
-      tabIndex={0}
+      tabIndex={disabled ? -1 : 0}
+      aria-disabled={disabled || undefined}
       aria-label={`${label}: ${displayValue}. Click to edit.`}
-      className="group inline-flex cursor-pointer items-center gap-1 rounded-md bg-secondary py-0.5 pl-2 pr-1 text-xs font-medium text-secondary-foreground transition-colors hover:bg-secondary/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+      className={cn(
+        "group inline-flex items-center gap-1 rounded-md bg-secondary py-0.5 pl-2 pr-1 text-xs font-medium text-secondary-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+        disabled
+          ? "cursor-not-allowed opacity-50"
+          : "cursor-pointer hover:bg-secondary/80",
+      )}
       onClick={(e) => {
         e.stopPropagation();
         if (!disabled && onClick) onClick();
