@@ -38,7 +38,7 @@ export function Trigger<T extends FilterSchema>({
   // chip-aware guard, the rAF would yank focus back to the input every
   // time mode changes.
   React.useEffect(() => {
-    if (ft.dropdown.open && !isPanelMode) {
+    if (ft.dropdown.isOpen && !isPanelMode) {
       requestAnimationFrame(() => {
         const active = document.activeElement;
         const onChip = active?.closest?.(
@@ -48,14 +48,14 @@ export function Trigger<T extends FilterSchema>({
         ft.inputProps.ref.current?.focus();
       });
     }
-  }, [ft.dropdown.open, state.mode, isPanelMode, ft.inputProps.ref]);
+  }, [ft.dropdown.isOpen, state.mode, isPanelMode, ft.inputProps.ref]);
 
   const highlightedItem =
     ft.dropdown.highlightedIndex >= 0
       ? ft.dropdown.items[ft.dropdown.highlightedIndex]
       : null;
   const activeDescendantId =
-    ft.dropdown.open && highlightedItem
+    ft.dropdown.isOpen && highlightedItem
       ? `${listboxId}-item-${highlightedItem.key}`
       : undefined;
 
@@ -146,14 +146,14 @@ export function Trigger<T extends FilterSchema>({
           // the popup type and the controlled element id both differ.
           aria-haspopup={isPanelMode ? "dialog" : "listbox"}
           aria-controls={
-            ft.dropdown.open && !isPanelMode ? listboxId : undefined
+            ft.dropdown.isOpen && !isPanelMode ? listboxId : undefined
           }
           aria-activedescendant={activeDescendantId}
           onClick={() => {
             // Focus alone won't reopen the popover after ESC-from-categories
             // (the input keeps focus, so onFocus doesn't re-fire). A click
             // on the input bar always opens.
-            if (!disabled && !ft.dropdown.open) ft.open();
+            if (!disabled && !ft.dropdown.isOpen) ft.open();
           }}
           onKeyDown={(e) => {
             // ArrowLeft on an empty input with the cursor at position 0:

@@ -61,7 +61,7 @@ function FilterTokens<const T extends FilterSchema>({
 
   return (
     <Popover.Root
-      open={ft.dropdown.open}
+      open={ft.dropdown.isOpen}
       onOpenChange={(open, details) => {
         if (open) return;
         // ESC: don't let Base UI close — the hook's handleKeyDown will run

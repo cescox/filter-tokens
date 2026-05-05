@@ -623,7 +623,7 @@ export function useFilterTokens<const T extends FilterSchema>(
       'aria-autocomplete': 'list' as const,
     },
     dropdown: {
-      open: isOpen,
+      isOpen,
       loading: asyncLoading,
       error: asyncError,
       retry: () => setRetryToken((n) => n + 1),

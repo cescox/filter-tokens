@@ -155,7 +155,7 @@ export interface FilterTokensInputProps {
 }
 
 export interface FilterTokensDropdown {
-  open: boolean;
+  isOpen: boolean;
   loading: boolean;
   error: string | null;
   retry: () => void;

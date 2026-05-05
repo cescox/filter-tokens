@@ -111,14 +111,14 @@ describe('useFilterTokens', () => {
   describe('dropdown', () => {
     it('starts closed', () => {
       const { result } = setup();
-      expect(result.current.dropdown.open).toBe(false);
+      expect(result.current.dropdown.isOpen).toBe(false);
       expect(result.current.dropdown.items).toEqual([]);
     });
 
     it('opens with categories on focus', () => {
       const { result } = setup();
       act(() => result.current.inputProps.onFocus());
-      expect(result.current.dropdown.open).toBe(true);
+      expect(result.current.dropdown.isOpen).toBe(true);
       expect(result.current.dropdown.items).toHaveLength(5);
       expect(result.current.dropdown.items.map((i) => i.key)).toEqual([
         'status', 'tags', 'period', 'search', 'amount',
@@ -140,7 +140,7 @@ describe('useFilterTokens', () => {
       act(() => result.current.dropdown.select(result.current.dropdown.items[0]));
       act(() => result.current.dropdown.select(result.current.dropdown.items[1]));
       expect(onChange).toHaveBeenCalledWith({ status: 'error' });
-      expect(result.current.dropdown.open).toBe(true);
+      expect(result.current.dropdown.isOpen).toBe(true);
       expect(result.current.dropdown.state.mode).toBe('categories');
     });
 
@@ -151,7 +151,7 @@ describe('useFilterTokens', () => {
       act(() => result.current.dropdown.select(tagsItem));
       act(() => result.current.dropdown.select(result.current.dropdown.items[0]));
       expect(onChange).toHaveBeenCalledWith({ tags: ['bug'] });
-      expect(result.current.dropdown.open).toBe(true);
+      expect(result.current.dropdown.isOpen).toBe(true);
     });
 
     it('enters text-entry mode for text filters', () => {
@@ -165,9 +165,9 @@ describe('useFilterTokens', () => {
     it('closes on close()', () => {
       const { result } = setup();
       act(() => result.current.inputProps.onFocus());
-      expect(result.current.dropdown.open).toBe(true);
+      expect(result.current.dropdown.isOpen).toBe(true);
       act(() => result.current.dropdown.close());
-      expect(result.current.dropdown.open).toBe(false);
+      expect(result.current.dropdown.isOpen).toBe(false);
     });
   });
 
@@ -185,14 +185,14 @@ describe('useFilterTokens', () => {
     it('opens dropdown on ArrowDown when closed', () => {
       const { result } = setup();
       keyDown(result, 'ArrowDown');
-      expect(result.current.dropdown.open).toBe(true);
+      expect(result.current.dropdown.isOpen).toBe(true);
     });
 
     it('opens dropdown on ArrowUp when closed', () => {
       // WAI-ARIA combobox: both ArrowDown and ArrowUp open a closed popup.
       const { result } = setup();
       keyDown(result, 'ArrowUp');
-      expect(result.current.dropdown.open).toBe(true);
+      expect(result.current.dropdown.isOpen).toBe(true);
     });
 
     it('navigates highlighted index with arrows', () => {
@@ -246,7 +246,7 @@ describe('useFilterTokens', () => {
       const { result } = setup();
       act(() => result.current.inputProps.onFocus());
       keyDown(result, 'Escape');
-      expect(result.current.dropdown.open).toBe(false);
+      expect(result.current.dropdown.isOpen).toBe(false);
     });
   });
 
@@ -424,7 +424,7 @@ describe('useFilterTokens', () => {
       expect(result.current.dropdown.state.mode).toBe('values');
       act(() => result.current.dropdown.goBack());
       expect(result.current.dropdown.state.mode).toBe('categories');
-      expect(result.current.dropdown.open).toBe(true);
+      expect(result.current.dropdown.isOpen).toBe(true);
     });
 
     it('goes back from text-entry to categories', () => {
@@ -440,9 +440,9 @@ describe('useFilterTokens', () => {
     it('closes from categories', () => {
       const { result } = setup();
       act(() => result.current.inputProps.onFocus());
-      expect(result.current.dropdown.open).toBe(true);
+      expect(result.current.dropdown.isOpen).toBe(true);
       act(() => result.current.dropdown.goBack());
-      expect(result.current.dropdown.open).toBe(false);
+      expect(result.current.dropdown.isOpen).toBe(false);
     });
   });
 

@@ -60,7 +60,7 @@ function FilterTokens<const T extends FilterSchema>({
 
   return (
     <PopoverPrimitive.Root
-      open={ft.dropdown.open}
+      open={ft.dropdown.isOpen}
       onOpenChange={(open) => { if (!open) ft.dropdown.close(); }}
       modal={false}
     >
