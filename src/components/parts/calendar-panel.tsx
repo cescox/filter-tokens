@@ -6,6 +6,20 @@ import { Button } from "filter-tokens/components/ui/button";
 import { Calendar, CalendarDayButton } from "filter-tokens/components/ui/calendar";
 import { DateTimeRow } from "./date-time-row";
 
+/** Returns a copy of the date set to 23:59:59.999 — used to anchor an End
+ *  bound to the end of the chosen day instead of midnight at its start. */
+function endOfDay(d: Date): Date {
+  const out = new Date(d);
+  out.setHours(23, 59, 59, 999);
+  return out;
+}
+
+/** True when the date is at 00:00 — i.e. a calendar-click (which always
+ *  produces midnight timestamps) without any user-typed time. */
+function isMidnight(d: Date): boolean {
+  return d.getHours() === 0 && d.getMinutes() === 0;
+}
+
 export interface RangeCalendarPanelProps {
   showTime: boolean;
   locale?: Locale;
@@ -66,11 +80,9 @@ export function RangeCalendarPanel({
         setFrom(day);
         setTo(undefined);
       } else {
-        const d = new Date(day);
-        if (showTime && d.getHours() === 0 && d.getMinutes() === 0) {
-          d.setHours(23, 59, 59, 999);
-        }
-        setTo(d);
+        // Calendar clicks land at midnight; with the time UI visible, default
+        // End to the end of that day so a single click implies "all day".
+        setTo(showTime && isMidnight(day) ? endOfDay(day) : day);
         setActiveField("start");
       }
     }
@@ -85,14 +97,13 @@ export function RangeCalendarPanel({
     }
     if (!from && to) {
       // Open-ended "Until X"
-      const toDate = new Date(to);
-      if (!showTime) toDate.setHours(23, 59, 59, 999);
-      onSelect({ to: toDate.toISOString() });
+      onSelect({ to: (showTime ? to : endOfDay(to)).toISOString() });
       return;
     }
-    const toDate = new Date(to!);
-    if (!showTime) toDate.setHours(23, 59, 59, 999);
-    onSelect({ from: from!.toISOString(), to: toDate.toISOString() });
+    onSelect({
+      from: from!.toISOString(),
+      to: (showTime ? to! : endOfDay(to!)).toISOString(),
+    });
   }
 
   // Stable DayButton wrapper for hover tracking
@@ -177,15 +188,13 @@ export function RangeCalendarPanel({
               setTo(undefined);
               return;
             }
-            if (showTime && d.getHours() === 0 && d.getMinutes() === 0) {
-              d.setHours(23, 59, 59, 999);
-            }
             // Trust whatever the user typed — even if it's earlier than
             // Start. Auto-swapping to Start was confusing (typed value
             // ended up in a different field). Apply checks for empty,
             // and the consumer can validate range integrity.
-            setTo(d);
-            setMonth(d);
+            const next = showTime && isMidnight(d) ? endOfDay(d) : d;
+            setTo(next);
+            setMonth(next);
           }}
           inputRef={endInputRef}
           showTime={showTime}
