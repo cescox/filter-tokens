@@ -46,8 +46,7 @@
     "src/lib",
     "src/index.ts",
     "src/types.ts",
-    "src/use-filter-tokens.ts",
-    "src/utils.ts"
+    "src/use-filter-tokens.ts"
   ],
   "sideEffects": false,
   "scripts": {

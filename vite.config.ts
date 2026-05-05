@@ -7,7 +7,7 @@ export default defineConfig({
   plugins: [
     react(),
     dts({
-      include: ['src/index.ts', 'src/types.ts', 'src/use-filter-tokens.ts', 'src/utils.ts'],
+      include: ['src/index.ts', 'src/types.ts', 'src/use-filter-tokens.ts', 'src/lib/format.ts'],
       rollupTypes: true,
     }),
   ],

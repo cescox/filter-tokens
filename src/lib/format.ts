@@ -6,7 +6,7 @@ import type {
   OptionsOrFn,
   FilterContext,
   Token,
-} from './types';
+} from '../types';
 
 export function resolveOptionsSync<T extends { value: string; label: string }>(
   optionsOrFn: OptionsOrFn<T> | undefined,

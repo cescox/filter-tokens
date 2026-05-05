@@ -13,7 +13,7 @@ import type {
   DateRangePreset,
   DateSinglePreset,
 } from './types';
-import { resolveOptionsSync, buildTokens, findOptionLabel, formatFilterValue } from './utils';
+import { resolveOptionsSync, buildTokens, findOptionLabel, formatFilterValue } from './lib/format';
 
 function optionsContentEqual(a: Option[], b: Option[]): boolean {
   if (a.length !== b.length) return false;
