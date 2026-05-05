@@ -101,14 +101,15 @@ export function Listbox<T extends FilterSchema>({
             key={item.key}
             id={`${listboxId}-item-${item.key}`}
             role="option"
-            // Categories aren't "selectable" in the WAI-ARIA sense — clicking
-            // one navigates into a sub-menu rather than choosing a value. Only
-            // emit aria-selected for actual value options. The data-selected
+            // Categories, presets, and custom-date entries aren't
+            // "selectable" in the WAI-ARIA sense — clicking them navigates or
+            // applies a value rather than choosing one. Only emit
+            // aria-selected for actual value options. The data-selected
             // attribute is preserved either way so consumer CSS can still
             // indicate categories that have an active filter.
-            aria-selected={item.type === 'value' ? item.selected : undefined}
+            aria-selected={item.kind === 'value' ? item.selected : undefined}
             data-slot="filter-tokens-dropdown-item"
-            data-type={item.type}
+            data-kind={item.kind}
             data-highlighted={isHighlighted || undefined}
             data-selected={item.selected || undefined}
             className={cn(
@@ -125,7 +126,7 @@ export function Listbox<T extends FilterSchema>({
               <item.icon className="size-4 shrink-0 text-muted-foreground" />
             )}
             <span className="flex-1 truncate">{item.label}</span>
-            {item.type === "category" && (
+            {item.kind === "category" && (
               <ChevronRightIcon className="size-3.5 text-muted-foreground/50" />
             )}
           </div>

@@ -324,11 +324,11 @@ export function useFilterTokens<const T extends FilterSchema>(
       return Object.entries(schema)
         .filter(([, def]) => !search || def.label.toLowerCase().includes(lowerSearch))
         .map(([key, def]) => ({
+          kind: 'category' as const,
           key,
           label: def.label,
           icon: def.icon,
           selected: values[key] !== undefined,
-          type: 'category' as const,
         }));
     }
 
@@ -349,7 +349,7 @@ export function useFilterTokens<const T extends FilterSchema>(
             const selected = def.multi && Array.isArray(currentVal)
               ? (currentVal as string[]).includes(o.value)
               : currentVal === o.value;
-            return { key: o.value, label: o.label, selected, type: 'value' as const };
+            return { kind: 'value' as const, key: o.value, label: o.label, selected };
           });
       }
 
@@ -358,9 +358,9 @@ export function useFilterTokens<const T extends FilterSchema>(
         const customLabel = `Custom${def.range ? ' range' : ''}...`;
         const items: FilterTokensDropdownItem[] = presets
           .filter((p) => !search || p.label.toLowerCase().includes(lowerSearch))
-          .map((p, i) => ({ key: presetKey(i), label: p.label, selected: false, type: 'value' as const }));
+          .map((p, i) => ({ kind: 'preset' as const, key: presetKey(i), label: p.label, selected: false }));
         if (!search || customLabel.toLowerCase().includes(lowerSearch)) {
-          items.push({ key: CUSTOM_DATE_KEY, label: customLabel, selected: false, type: 'value' as const });
+          items.push({ kind: 'custom-date' as const, key: CUSTOM_DATE_KEY, label: customLabel, selected: false });
         }
         return items;
       }
@@ -387,8 +387,14 @@ export function useFilterTokens<const T extends FilterSchema>(
   // ── Item selection ─────────────────────────
 
   function selectItem(item: FilterTokensDropdownItem) {
-    if (item.type === 'category') {
+    if (item.kind === 'category') {
       selectCategory(item.key);
+      return;
+    }
+
+    if (item.kind === 'custom-date' && activeCategory) {
+      setState({ mode: 'input', category: activeCategory, inputType: 'date' });
+      setSearch('');
       return;
     }
 
@@ -422,11 +428,6 @@ export function useFilterTokens<const T extends FilterSchema>(
       }
       next[activeCategory] = item.key;
     } else if (def.type === 'date' && def.presets) {
-      if (item.key === CUSTOM_DATE_KEY) {
-        setState({ mode: 'input', category: activeCategory, inputType: 'date' });
-        setSearch('');
-        return;
-      }
       const presetIndex = parsePresetKey(item.key);
       const presets = def.presets as readonly (DateRangePreset | DateSinglePreset)[];
       const preset = presetIndex !== null ? presets[presetIndex] : undefined;

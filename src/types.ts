@@ -112,12 +112,23 @@ export interface FilterTokensToken {
 
 // ── Dropdown ───────────────────────────────
 
+/**
+ * `kind` discriminates the four item shapes the dropdown can render:
+ * - `'category'`  — a top-level filter to drill into. `selected` reflects
+ *                   whether that category has any value set.
+ * - `'value'`     — a regular option (select option). `selected` reflects
+ *                   whether it's the current value (or in a multi-select set).
+ * - `'preset'`    — a date preset that applies a value when chosen.
+ *                   `selected` is always false.
+ * - `'custom-date'` — the "Custom..." entry that opens the calendar panel.
+ *                     `selected` is always false.
+ */
 export interface FilterTokensDropdownItem {
+  kind: 'category' | 'value' | 'preset' | 'custom-date';
   key: string;
   label: string;
   icon?: IconComponent;
   selected: boolean;
-  type: 'category' | 'value';
 }
 
 export type FilterTokensDropdownState =

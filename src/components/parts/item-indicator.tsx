@@ -1,19 +1,22 @@
 "use client";
 
 import { CalendarIcon, CheckIcon } from "lucide-react";
+import type { FilterTokensDropdownItem } from "filter-tokens";
 import { cn } from "filter-tokens/lib/utils";
 
 export interface ItemIndicatorProps {
-  item: { key: string; type: string; selected: boolean };
+  item: FilterTokensDropdownItem;
   isMultiSelect: boolean;
 }
 
 export function ItemIndicator({ item, isMultiSelect }: ItemIndicatorProps) {
-  if (item.key === "__custom_date__") {
+  if (item.kind === "custom-date") {
     return <CalendarIcon className="size-4 shrink-0 text-muted-foreground" />;
   }
 
-  if (item.type !== "value") return null;
+  // Categories and date presets render no leading indicator — categories
+  // navigate into a sub-menu, presets apply a value when chosen.
+  if (item.kind !== "value") return null;
 
   if (isMultiSelect) {
     return (
