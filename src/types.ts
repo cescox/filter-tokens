@@ -77,8 +77,10 @@ type SelectValue<T extends SelectFilterDef> =
     ? ExtractValues<T['options']>[]
     : ExtractValues<T['options']>;
 
+// Range filters allow either bound to be present (or both). When `from` is
+// missing the filter renders as "Until X"; when `to` is missing as "Since X".
 type DateValue<T extends DateFilterDef> =
-  T['range'] extends true ? { from: string; to?: string } : { date: string };
+  T['range'] extends true ? { from?: string; to?: string } : { date: string };
 
 type TextValue = string;
 
@@ -158,7 +160,7 @@ export interface FilterTokensReturn<T extends FilterSchema> {
   open: () => void;
   openCategory: (key: string) => void;
   clear: () => void;
-  setDateValue: (category: string, value: { from: string; to?: string } | { date: string }) => void;
+  setDateValue: (category: string, value: { from?: string; to?: string } | { date: string }) => void;
   setNumberValue: (category: string, value: { min?: number; max?: number }) => void;
 }
 

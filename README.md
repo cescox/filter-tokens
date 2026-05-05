@@ -169,7 +169,13 @@ presets: [
 ]
 ```
 
-When a user picks "Custom range..." and only fills the start date, the filter applies as open-ended ("Since X") — `{ from }` with no upper bound. This matches GitHub issue search, Datadog, and Linear conventions.
+Range filters support partial bounds. From "Custom range...", users can fill:
+
+- **Both** start and end → `{ from, to }`, token displays as `Apr 15 – Apr 20`
+- **Start only** → `{ from }`, token displays as `Since Apr 15` (open-ended upper bound)
+- **End only** → `{ to }`, token displays as `Until Apr 20` (open-ended lower bound)
+
+This matches GitHub issue search, Datadog, and Linear conventions. Consumers should treat missing `from` as "no lower bound" and missing `to` as "no upper bound."
 
 ### Text
 

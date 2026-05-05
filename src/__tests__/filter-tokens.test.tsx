@@ -280,6 +280,30 @@ describe('FilterTokens date presets', () => {
     expect(period.to).toBeUndefined();
   });
 
+  it('applies "until X" range with only end date set', async () => {
+    const user = userEvent.setup();
+    render(<Setup />);
+    await user.click(screen.getByRole('button', { name: 'Filter...' }));
+    await user.click(screen.getByText('Period'));
+    await user.click(screen.getByText('Custom range...'));
+    // Type only the End date — leave Start empty
+    const endInput = screen.getByLabelText('End date and time');
+    await user.clear(endInput);
+    await user.type(endInput, '04/20/2026');
+    await user.tab();
+    await user.click(screen.getByRole('button', { name: 'Apply' }));
+    const period = getValue().period;
+    expect(period.from).toBeUndefined();
+    expect(period.to).toBeDefined();
+  });
+
+  it('renders "Until X" token for to-only range value', () => {
+    render(<Setup initialValue={{ period: { to: '2026-04-20T23:59:59Z' } }} />);
+    expect(screen.getByText('Period:')).toBeInTheDocument();
+    // Token displayValue should start with "Until "
+    expect(screen.getByText(/Until /)).toBeInTheDocument();
+  });
+
   it('shows presets when re-clicking preset date pill', async () => {
     const user = userEvent.setup();
     render(<Setup />);

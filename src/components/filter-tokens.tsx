@@ -486,7 +486,7 @@ function RangeCalendarPanel({
   showTime: boolean;
   locale?: Locale;
   initialValue?: { from?: string; to?: string };
-  onSelect: (value: { from: string; to?: string }) => void;
+  onSelect: (value: { from?: string; to?: string }) => void;
   onCancel: () => void;
 }) {
   const [from, setFrom] = React.useState<Date | undefined>(() =>
@@ -531,15 +531,22 @@ function RangeCalendarPanel({
   }
 
   function handleApply() {
-    if (!from) return;
-    if (!to) {
-      // Open-ended "Since X" — leave `to` undefined so consumers see no upper bound
+    if (!from && !to) return;
+    if (from && !to) {
+      // Open-ended "Since X"
       onSelect({ from: from.toISOString() });
       return;
     }
-    const toDate = new Date(to);
+    if (!from && to) {
+      // Open-ended "Until X"
+      const toDate = new Date(to);
+      if (!showTime) toDate.setHours(23, 59, 59, 999);
+      onSelect({ to: toDate.toISOString() });
+      return;
+    }
+    const toDate = new Date(to!);
     if (!showTime) toDate.setHours(23, 59, 59, 999);
-    onSelect({ from: from.toISOString(), to: toDate.toISOString() });
+    onSelect({ from: from!.toISOString(), to: toDate.toISOString() });
   }
 
   // Stable DayButton wrapper for hover tracking
@@ -638,7 +645,7 @@ function RangeCalendarPanel({
         <Button variant="ghost" onClick={onCancel}>
           Cancel
         </Button>
-        <Button disabled={!from} onClick={handleApply}>
+        <Button disabled={!from && !to} onClick={handleApply}>
           Apply
         </Button>
       </div>

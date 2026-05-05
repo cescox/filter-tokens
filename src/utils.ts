@@ -84,11 +84,13 @@ export function buildTokens(
 
       if (dateLabels[key]) {
         displayValue = dateLabels[key];
-      } else if ('from' in dateVal && dateVal.from) {
-        displayValue = dateVal.to
-          ? `${fmt(dateVal.from)} – ${fmt(dateVal.to)}`
-          : `Since ${fmt(dateVal.from)}`;
-      } else if ('date' in dateVal && dateVal.date) {
+      } else if (dateVal.from && dateVal.to) {
+        displayValue = `${fmt(dateVal.from)} – ${fmt(dateVal.to)}`;
+      } else if (dateVal.from) {
+        displayValue = `Since ${fmt(dateVal.from)}`;
+      } else if (dateVal.to) {
+        displayValue = `Until ${fmt(dateVal.to)}`;
+      } else if (dateVal.date) {
         displayValue = fmt(dateVal.date);
       }
       if (displayValue) {
