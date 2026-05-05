@@ -25,6 +25,19 @@ function optionsContentEqual(a: Option[], b: Option[]): boolean {
 
 const ANNOUNCEMENT_CLEAR_MS = 1500;
 
+// Special dropdown-item keys for the date filter's preset list. These are
+// internal — they only appear in DropdownItem.key while the user is browsing
+// presets. Resolved back to a preset index (or the "custom" sentinel) inside
+// selectItem; never persisted to the consumer's value record.
+const CUSTOM_DATE_KEY = '__custom_date__';
+const PRESET_KEY_PREFIX = 'preset-';
+const presetKey = (index: number) => `${PRESET_KEY_PREFIX}${index}`;
+const parsePresetKey = (key: string): number | null => {
+  if (!key.startsWith(PRESET_KEY_PREFIX)) return null;
+  const n = parseInt(key.slice(PRESET_KEY_PREFIX.length), 10);
+  return Number.isFinite(n) ? n : null;
+};
+
 function getValueDisplay(
   def: FilterSchema[string],
   val: unknown,
@@ -381,9 +394,9 @@ export function useFilterTokens<const T extends FilterSchema>(
         const customLabel = `Custom${def.range ? ' range' : ''}...`;
         const items: DropdownItem[] = presets
           .filter((p) => !search || p.label.toLowerCase().includes(lowerSearch))
-          .map((p, i) => ({ key: `preset-${i}`, label: p.label, selected: false, type: 'value' as const }));
+          .map((p, i) => ({ key: presetKey(i), label: p.label, selected: false, type: 'value' as const }));
         if (!search || customLabel.toLowerCase().includes(lowerSearch)) {
-          items.push({ key: '__custom_date__', label: customLabel, selected: false, type: 'value' as const });
+          items.push({ key: CUSTOM_DATE_KEY, label: customLabel, selected: false, type: 'value' as const });
         }
         return items;
       }
@@ -445,14 +458,14 @@ export function useFilterTokens<const T extends FilterSchema>(
       }
       next[activeCategory] = item.key;
     } else if (def.type === 'date' && def.presets) {
-      if (item.key === '__custom_date__') {
+      if (item.key === CUSTOM_DATE_KEY) {
         setState({ mode: 'input', category: activeCategory, inputType: 'date' });
         setSearch('');
         return;
       }
-      const presetIndex = parseInt(item.key.replace('preset-', ''), 10);
+      const presetIndex = parsePresetKey(item.key);
       const presets = def.presets as readonly (DateRangePreset | DateSinglePreset)[];
-      const preset = presets[presetIndex];
+      const preset = presetIndex !== null ? presets[presetIndex] : undefined;
       if (preset) {
         setDateLabels((prev) => ({ ...prev, [activeCategory]: preset.label }));
         if ('from' in preset) {
