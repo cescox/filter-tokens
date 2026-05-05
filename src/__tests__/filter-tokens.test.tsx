@@ -339,7 +339,7 @@ describe('FilterTokens date presets', () => {
     await user.click(screen.getByText('Period'));
     expect(screen.getByText('Last hour')).toBeInTheDocument();
     expect(screen.getByText('Last 24h')).toBeInTheDocument();
-    expect(screen.getByText('Custom range...')).toBeInTheDocument();
+    expect(screen.getByText('Custom range')).toBeInTheDocument();
   });
 
   it('creates token with preset label on selection', async () => {
@@ -367,7 +367,7 @@ describe('FilterTokens date presets', () => {
     render(<Setup />);
     await user.click(getInput());
     await user.click(screen.getByText('Period'));
-    await user.click(screen.getByText('Custom range...'));
+    await user.click(screen.getByText('Custom range'));
     // Type only the Start date — leave End empty
     const startInput = screen.getByLabelText('Start date and time');
     await user.clear(startInput);
@@ -385,7 +385,7 @@ describe('FilterTokens date presets', () => {
     render(<Setup />);
     await user.click(getInput());
     await user.click(screen.getByText('Period'));
-    await user.click(screen.getByText('Custom range...'));
+    await user.click(screen.getByText('Custom range'));
     // Type only the End date — leave Start empty
     const endInput = screen.getByLabelText('End date and time');
     await user.clear(endInput);
@@ -457,7 +457,7 @@ describe('FilterTokens date presets', () => {
     render(<Setup />);
     await user.click(getInput());
     await user.click(screen.getByText('Period'));
-    await user.click(screen.getByText('Custom range...'));
+    await user.click(screen.getByText('Custom range'));
     const startInput = screen.getByLabelText('Start date and time');
     const endInput = screen.getByLabelText('End date and time');
     await user.clear(startInput);
@@ -500,7 +500,7 @@ describe('FilterTokens date presets', () => {
     // Now re-click the Period pill (has preset label)
     await user.click(screen.getByText('Period:').closest('[role="button"]')!);
     expect(screen.getByText('Last hour')).toBeInTheDocument();
-    expect(screen.getByText('Custom range...')).toBeInTheDocument();
+    expect(screen.getByText('Custom range')).toBeInTheDocument();
   });
 });
 

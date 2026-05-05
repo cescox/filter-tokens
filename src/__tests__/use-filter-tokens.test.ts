@@ -346,7 +346,7 @@ describe('useFilterTokens', () => {
       expect(result.current.dropdown.state.mode).toBe('values');
       const customItem = result.current.dropdown.items.find((i) => i.key === '__custom_date__');
       expect(customItem).toBeDefined();
-      expect(customItem!.label).toBe('Custom range...');
+      expect(customItem!.label).toBe('Custom range');
     });
 
     it('enters date-entry mode when selecting Custom range item', () => {

@@ -378,9 +378,9 @@ export function useFilterTokens<const T extends FilterSchema>(
   }
 
   const tokens: FilterTokensToken[] = useMemo(
-    () => buildTokens(schema, values as FilterValues<FilterSchema>, ctx, removeToken, dateLabels, locale),
+    () => buildTokens(schema, values as FilterValues<FilterSchema>, ctx, removeToken, dateLabels, locale, messages),
     // eslint-disable-next-line react-hooks/exhaustive-deps — removeToken uses values via closure, but values is already a dep
-    [schema, values, ctx, dateLabels, locale],
+    [schema, values, ctx, dateLabels, locale, messages],
   );
 
   // ── Dropdown items ─────────────────────────
@@ -423,7 +423,9 @@ export function useFilterTokens<const T extends FilterSchema>(
 
       if (def.type === 'date' && def.presets) {
         const presets = def.presets as readonly (DateRangePreset | DateSinglePreset)[];
-        const customLabel = `Custom${def.range ? ' range' : ''}...`;
+        const customLabel = def.range
+          ? messages.datePresetCustomRangeLabel
+          : messages.datePresetCustomLabel;
         const items: FilterTokensDropdownItem[] = presets
           .filter((p) => !search || p.label.toLowerCase().includes(lowerSearch))
           .map((p, i) => ({ kind: 'preset' as const, key: presetKey(i), label: p.label, selected: false }));
@@ -435,7 +437,7 @@ export function useFilterTokens<const T extends FilterSchema>(
     }
 
     return [];
-  }, [state, schema, values, search, ctx, asyncOptions]);
+  }, [state, schema, values, search, ctx, asyncOptions, messages]);
 
   // Re-highlight when the user *types* a search (filtered list shifted) and
   // honour ArrowUp's "land on last item" intent. Do NOT reset on bare
