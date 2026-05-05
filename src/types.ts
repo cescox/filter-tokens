@@ -251,6 +251,8 @@ export interface FilterTokensMessages {
   popupBackAria: string;
   /** aria-label of the back button when stepping out to a filter's values. */
   popupBackToFilterAria: (filter: string) => string;
+  /** aria-label of the loading-state region (the spinner has no visible text). */
+  popupLoadingAria: string;
   /** Visible text shown when async option loading fails. */
   popupErrorLabel: string;
   /** Visible label of the retry button. */

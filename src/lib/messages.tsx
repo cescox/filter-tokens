@@ -16,6 +16,7 @@ export const defaultMessages: FilterTokensMessages = {
   popupListAria: 'Filters',
   popupBackAria: 'Back to filters',
   popupBackToFilterAria: (filter) => `Back to ${filter}`,
+  popupLoadingAria: 'Loading options',
   popupErrorLabel: 'Failed to load options',
   popupRetryLabel: 'Retry',
   popupEmptyLabel: 'No results',

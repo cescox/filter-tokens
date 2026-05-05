@@ -52,6 +52,7 @@ export function Listbox<T extends FilterSchema>({
         <div
           data-slot="filter-tokens-loading"
           role="status"
+          aria-label={ft.messages.popupLoadingAria}
           className="flex justify-center py-6"
         >
           <LoaderCircleIcon className="size-4 animate-spin text-muted-foreground" />
