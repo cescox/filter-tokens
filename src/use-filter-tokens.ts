@@ -12,7 +12,7 @@ import type {
   DateRangePreset,
   DateSinglePreset,
 } from './types';
-import { resolveOptionsSync, buildTokens } from './utils';
+import { resolveOptionsSync, buildTokens, findOptionLabel, formatDateShort } from './utils';
 
 const noop = () => {};
 
@@ -22,6 +22,90 @@ function optionsContentEqual(a: Option[], b: Option[]): boolean {
     if (a[i].value !== b[i].value || a[i].label !== b[i].label) return false;
   }
   return true;
+}
+
+const ANNOUNCEMENT_CLEAR_MS = 1500;
+
+function getValueDisplay(
+  def: FilterSchema[string],
+  val: unknown,
+  ctx: { filters: FilterValues<FilterSchema> },
+  locale?: string,
+): string {
+  if (val === undefined || val === null) return '';
+  if (def.type === 'select') {
+    const options = resolveOptionsSync(def.options, ctx);
+    if (def.multi && Array.isArray(val)) {
+      return (val as string[]).map((v) => findOptionLabel(options, v)).join(', ');
+    }
+    if (typeof val === 'string') return findOptionLabel(options, val);
+    return '';
+  }
+  if (def.type === 'text') {
+    return typeof val === 'string' ? val : '';
+  }
+  if (def.type === 'number') {
+    const n = val as { min?: number; max?: number };
+    const unit = def.unit || '';
+    if (n.min !== undefined && n.max !== undefined) return `${n.min}–${n.max}${unit}`;
+    if (n.min !== undefined) return `≥${n.min}${unit}`;
+    if (n.max !== undefined) return `≤${n.max}${unit}`;
+    return '';
+  }
+  if (def.type === 'date') {
+    const d = val as { date?: string; from?: string; to?: string };
+    const fmt = (s: string) => formatDateShort(s, locale);
+    if (d.from && d.to) return `${fmt(d.from)} – ${fmt(d.to)}`;
+    if (d.from) return `Since ${fmt(d.from)}`;
+    if (d.to) return `Until ${fmt(d.to)}`;
+    if (d.date) return fmt(d.date);
+    return '';
+  }
+  return '';
+}
+
+function diffAnnouncements(
+  prev: Record<string, unknown>,
+  next: Record<string, unknown>,
+  schema: Record<string, FilterSchema[string]>,
+  ctx: { filters: FilterValues<FilterSchema> },
+  locale: string | undefined,
+): string[] {
+  const out: string[] = [];
+  const keys = new Set([...Object.keys(prev), ...Object.keys(next)]);
+  for (const key of keys) {
+    const def = schema[key];
+    if (!def) continue;
+    const label = def.label;
+    const p = prev[key];
+    const n = next[key];
+    if (p === n) continue;
+
+    if (def.type === 'select' && def.multi) {
+      const pArr = (p as string[] | undefined) ?? [];
+      const nArr = (n as string[] | undefined) ?? [];
+      const options = resolveOptionsSync(def.options, ctx);
+      for (const v of nArr) {
+        if (!pArr.includes(v)) out.push(`Added ${label}: ${findOptionLabel(options, v)}`);
+      }
+      for (const v of pArr) {
+        if (!nArr.includes(v)) out.push(`Removed ${label}: ${findOptionLabel(options, v)}`);
+      }
+      continue;
+    }
+
+    const pDisplay = getValueDisplay(def, p, ctx, locale);
+    const nDisplay = getValueDisplay(def, n, ctx, locale);
+    if (p === undefined && n !== undefined) {
+      if (nDisplay) out.push(`Added ${label}: ${nDisplay}`);
+    } else if (p !== undefined && n === undefined) {
+      if (pDisplay) out.push(`Removed ${label}: ${pDisplay}`);
+    } else {
+      if (pDisplay) out.push(`Removed ${label}: ${pDisplay}`);
+      if (nDisplay) out.push(`Added ${label}: ${nDisplay}`);
+    }
+  }
+  return out;
 }
 
 type Mode = 'closed' | 'categories' | 'values' | 'text-entry' | 'date-entry' | 'number-entry';
@@ -48,6 +132,9 @@ export function useFilterTokens<const T extends FilterSchema>(
   const [asyncError, setAsyncError] = useState<string | null>(null);
   const [retryToken, setRetryToken] = useState(0);
   const [dateLabels, setDateLabels] = useState<Record<string, string>>({});
+  const [announcement, setAnnouncement] = useState('');
+  const prevValueRef = useRef<Record<string, unknown>>(values);
+  const announcementTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const isOpen = mode !== 'closed';
@@ -190,6 +277,29 @@ export function useFilterTokens<const T extends FilterSchema>(
       return changed ? next : prev;
     });
   }, [values]);
+
+  // ── aria-live announcements for chip add/remove ──
+
+  useEffect(() => {
+    const prev = prevValueRef.current;
+    prevValueRef.current = values;
+    if (prev === values) return;
+    const messages = diffAnnouncements(prev, values, schema, ctx, locale);
+    if (messages.length === 0) return;
+    setAnnouncement(messages.join('. '));
+    if (announcementTimerRef.current) clearTimeout(announcementTimerRef.current);
+    announcementTimerRef.current = setTimeout(() => {
+      setAnnouncement('');
+      announcementTimerRef.current = null;
+    }, ANNOUNCEMENT_CLEAR_MS);
+    // schema/ctx/locale intentionally omitted — unstable refs would clobber
+    // the diff before the timer clears it. Resolved against current closure.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [values]);
+
+  useEffect(() => () => {
+    if (announcementTimerRef.current) clearTimeout(announcementTimerRef.current);
+  }, []);
 
   // ── Token derivation ───────────────────────
 
@@ -414,6 +524,7 @@ export function useFilterTokens<const T extends FilterSchema>(
 
   return {
     tokens,
+    announcement,
     inputProps: {
       ref: inputRef,
       value: search,

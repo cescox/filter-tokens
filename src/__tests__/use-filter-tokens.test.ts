@@ -681,4 +681,49 @@ describe('useFilterTokens', () => {
       expect(result.current.dropdown.state.mode).toBe('categories');
     });
   });
+
+  describe('announcement (aria-live)', () => {
+    it('updates announcement on token add', () => {
+      const { result, rerender } = setup();
+      expect(result.current.announcement).toBe('');
+      rerender({ value: { status: 'error' } });
+      expect(result.current.announcement).toContain('Added Status: Error');
+    });
+
+    it('updates announcement on token remove', () => {
+      const { result, rerender } = setup({ status: 'error' });
+      expect(result.current.announcement).toBe('');
+      rerender({ value: {} });
+      expect(result.current.announcement).toContain('Removed Status: Error');
+    });
+
+    it('clears announcement after 1500ms', () => {
+      vi.useFakeTimers();
+      try {
+        const { result, rerender } = setup();
+        rerender({ value: { status: 'error' } });
+        expect(result.current.announcement).toContain('Added Status: Error');
+        act(() => {
+          vi.advanceTimersByTime(1500);
+        });
+        expect(result.current.announcement).toBe('');
+      } finally {
+        vi.useRealTimers();
+      }
+    });
+
+    it('per-value announcement for multi-select adds', () => {
+      const { result, rerender } = setup({ tags: ['bug'] });
+      rerender({ value: { tags: ['bug', 'feature'] } });
+      expect(result.current.announcement).toContain('Added Tags: Feature');
+      expect(result.current.announcement).not.toContain('Added Tags: Bug');
+    });
+
+    it('per-value announcement for multi-select removes', () => {
+      const { result, rerender } = setup({ tags: ['bug', 'feature'] });
+      rerender({ value: { tags: ['bug'] } });
+      expect(result.current.announcement).toContain('Removed Tags: Feature');
+      expect(result.current.announcement).not.toContain('Removed Tags: Bug');
+    });
+  });
 });

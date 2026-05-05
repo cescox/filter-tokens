@@ -155,6 +155,12 @@ export interface Dropdown {
 
 export interface FilterTokensReturn<T extends FilterSchema> {
   tokens: Token[];
+  /**
+   * Screen-reader announcement string for chip add/remove operations.
+   * Wire this to a visually-hidden element with aria-live="polite".
+   * Auto-clears after ~1500ms.
+   */
+  announcement: string;
   inputProps: InputProps;
   dropdown: Dropdown;
   open: () => void;

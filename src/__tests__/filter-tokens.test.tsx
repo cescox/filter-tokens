@@ -357,6 +357,41 @@ describe('FilterTokens token management', () => {
   });
 });
 
+// ── Announcements (aria-live) ─────────────────
+
+describe('FilterTokens announcements', () => {
+  function getAnnouncement() {
+    return document.querySelector('[data-slot="filter-tokens-announcement"]');
+  }
+
+  it('announces add when a token is added', async () => {
+    const user = userEvent.setup();
+    render(<Setup />);
+    await user.click(screen.getByRole('button', { name: 'Filter...' }));
+    await user.click(screen.getByText('Status'));
+    await user.click(screen.getByText('Error'));
+    expect(getAnnouncement()?.textContent).toContain('Added Status: Error');
+  });
+
+  it('announces remove when a token is removed', async () => {
+    const user = userEvent.setup();
+    render(<Setup initialValue={{ status: 'error' }} />);
+    await user.click(screen.getByLabelText('Remove Status: Error'));
+    expect(getAnnouncement()?.textContent).toContain('Removed Status: Error');
+  });
+
+  it('announces per-value adds for multi-select', async () => {
+    const user = userEvent.setup();
+    render(<Setup />);
+    await user.click(screen.getByRole('button', { name: 'Filter...' }));
+    await user.click(screen.getByText('Tags'));
+    await user.click(screen.getByText('Bug'));
+    expect(getAnnouncement()?.textContent).toContain('Added Tags: Bug');
+    await user.click(screen.getByText('Feature'));
+    expect(getAnnouncement()?.textContent).toContain('Added Tags: Feature');
+  });
+});
+
 // ── Disabled State ──────────────────────────────
 
 describe('FilterTokens disabled', () => {
@@ -452,7 +487,7 @@ describe('FilterTokens async loading', () => {
     render(<AsyncSetup />);
     await user.click(screen.getByRole('button', { name: 'Filter...' }));
     await user.click(screen.getByText('City'));
-    expect(screen.getByRole('status')).toBeInTheDocument();
+    expect(document.querySelector('[data-slot="filter-tokens-loading"]')).not.toBeNull();
     expect(screen.queryByText('No results found')).not.toBeInTheDocument();
   });
 
@@ -463,7 +498,7 @@ describe('FilterTokens async loading', () => {
     await user.click(screen.getByText('City'));
     await screen.findByText('New York');
     expect(screen.getByText('Los Angeles')).toBeInTheDocument();
-    expect(screen.queryByRole('status')).not.toBeInTheDocument();
+    expect(document.querySelector('[data-slot="filter-tokens-loading"]')).toBeNull();
   });
 
   it('shows error state with Retry when async fails, then recovers', async () => {

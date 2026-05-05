@@ -88,6 +88,14 @@ function FilterTokens<const T extends FilterSchema>({
       <PopoverPrimitive.Anchor asChild>
         <div data-slot="filter-tokens" {...props}>
           <div
+            data-slot="filter-tokens-announcement"
+            role="status"
+            aria-live="polite"
+            className="sr-only"
+          >
+            {ft.announcement}
+          </div>
+          <div
             ref={triggerRef}
             data-slot="filter-tokens-trigger"
             data-disabled={disabled || undefined}
