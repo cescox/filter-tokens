@@ -1,6 +1,6 @@
 {
   "name": "filter-tokens",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "author": "Francesco Carrella <francesco.carrella@gmail.com>",
   "homepage": "https://github.com/cescox/filter-tokens",
   "description": "Headless tokenized filter input hook for React. Pre-built shadcn/ui component available via registry.",
