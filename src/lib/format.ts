@@ -30,7 +30,13 @@ export function findOptionLabel(
   return found ? found.label : value;
 }
 
-export function formatDateShort(dateStr: string, locale = 'en-US'): string {
+/**
+ * Render a short month/day for a chip's date display. Passing `locale`
+ * undefined (the default) defers to the runtime — the browser's preferred
+ * locale on the client, the Node default on the server. Pass an explicit
+ * BCP 47 tag (e.g. 'fr-FR') to force a specific format.
+ */
+export function formatDateShort(dateStr: string, locale?: string): string {
   try {
     const d = new Date(dateStr);
     return d.toLocaleDateString(locale, { month: 'short', day: 'numeric' });
