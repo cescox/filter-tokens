@@ -187,8 +187,10 @@ export interface FilterTokensReturn<T extends FilterSchema> {
   open: () => void;
   openCategory: (key: string) => void;
   clear: () => void;
-  setDateValue: (category: string, value: { from?: string; to?: string } | { date: string }) => void;
-  setNumberValue: (category: string, value: { min?: number; max?: number }) => void;
+  /** Commits a date value (called by the calendar panel's Apply button). */
+  applyDate: (category: string, value: { from?: string; to?: string } | { date: string }) => void;
+  /** Commits a number range (called by the number panel's Apply button). */
+  applyNumber: (category: string, value: { min?: number; max?: number }) => void;
 }
 
 // ── Component props ────────────────────────

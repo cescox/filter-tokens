@@ -504,12 +504,12 @@ describe('useFilterTokens', () => {
     });
   });
 
-  describe('setDateValue', () => {
+  describe('applyDate', () => {
     it('sets date value and closes the popover (Apply commits and dismisses)', () => {
       const { result, onChange } = setup();
       act(() => result.current.openCategory('period'));
       act(() => {
-        result.current.setDateValue('period', { from: '2026-04-05T00:00:00Z', to: '2026-04-15T23:59:59Z' });
+        result.current.applyDate('period', { from: '2026-04-05T00:00:00Z', to: '2026-04-15T23:59:59Z' });
       });
       expect(onChange).toHaveBeenCalledWith({
         period: { from: '2026-04-05T00:00:00Z', to: '2026-04-15T23:59:59Z' },
@@ -716,7 +716,7 @@ describe('useFilterTokens', () => {
       act(() => result.current.openCategory('amount'));
       expect(result.current.dropdown.state).toMatchObject({ mode: 'input', inputType: 'number' });
       act(() => {
-        result.current.setNumberValue('amount', { min: 10, max: 500 });
+        result.current.applyNumber('amount', { min: 10, max: 500 });
       });
       expect(onChange).toHaveBeenCalledWith({ amount: { min: 10, max: 500 } });
       expect(result.current.dropdown.state.mode).toBe('closed');

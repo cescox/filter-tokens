@@ -39,7 +39,7 @@ export function Panels<T extends FilterSchema>({
         showTime={activeDef.time === true}
         locale={dateLocale}
         initialValue={currentValue as { from?: string; to?: string } | undefined}
-        onSelect={(v) => ft.setDateValue(activeCategory, v)}
+        onSelect={(v) => ft.applyDate(activeCategory, v)}
         onCancel={ft.dropdown.close}
       />
     ) : (
@@ -47,7 +47,7 @@ export function Panels<T extends FilterSchema>({
         showTime={activeDef.time === true}
         locale={dateLocale}
         initialValue={currentValue as { date?: string } | undefined}
-        onSelect={(v) => ft.setDateValue(activeCategory, v)}
+        onSelect={(v) => ft.applyDate(activeCategory, v)}
         onCancel={ft.dropdown.close}
       />
     );
@@ -60,7 +60,7 @@ export function Panels<T extends FilterSchema>({
         min={activeDef.min}
         max={activeDef.max}
         initialValue={currentValue as { min?: number; max?: number } | undefined}
-        onSelect={(v) => ft.setNumberValue(activeCategory, v)}
+        onSelect={(v) => ft.applyNumber(activeCategory, v)}
         onCancel={ft.dropdown.close}
       />
     );

@@ -639,7 +639,7 @@ export function useFilterTokens<const T extends FilterSchema>(
     open: () => { if (state.mode === 'closed') openCategories(); },
     openCategory: (key: string) => { selectCategory(key); },
     clear: () => { emitChange({}); setDateLabels({}); close(); },
-    setDateValue: (category: string, value: { from?: string; to?: string } | { date: string }) => {
+    applyDate: (category: string, value: { from?: string; to?: string } | { date: string }) => {
       setDateLabels((prev) => { const n = { ...prev }; delete n[category]; return n; });
       emitChange({ ...values, [category]: value });
       // Close after Apply: configuring a custom date is a deliberate
@@ -647,9 +647,9 @@ export function useFilterTokens<const T extends FilterSchema>(
       // (Preset selection uses the selectItem path and stays open.)
       close();
     },
-    setNumberValue: (category: string, value: { min?: number; max?: number }) => {
+    applyNumber: (category: string, value: { min?: number; max?: number }) => {
       emitChange({ ...values, [category]: value });
-      // Same as setDateValue: Apply on a number panel is a deliberate
+      // Same as applyDate: Apply on a number panel is a deliberate
       // commit, so close rather than reopening to categories.
       close();
     },
