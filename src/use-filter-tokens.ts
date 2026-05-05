@@ -101,6 +101,29 @@ function findCurrentSelectIndex(
   return 0;
 }
 
+/**
+ * Picks the placeholder shown in the combobox input. Text-input mode uses
+ * the filter's own placeholder (or "Type Label...") to telegraph what
+ * the user is editing; values-list mode invites search ("Search Label...");
+ * everything else falls back to the consumer's top-level placeholder.
+ */
+function getPlaceholder(
+  state: FilterTokensDropdownState,
+  schema: Record<string, FilterDef>,
+  fallback: string,
+): string {
+  if (state.mode === 'input' && state.inputType === 'text') {
+    const def = schema[state.category];
+    if (def?.type === 'text' && def.placeholder) return def.placeholder;
+    return `Type ${def?.label ?? state.category}...`;
+  }
+  if (state.mode === 'values') {
+    const def = schema[state.category];
+    if (def) return `Search ${def.label}...`;
+  }
+  return fallback;
+}
+
 function diffAnnouncements(
   prev: Record<string, unknown>,
   next: Record<string, unknown>,
@@ -566,14 +589,7 @@ export function useFilterTokens<const T extends FilterSchema>(
 
   // ── Return ─────────────────────────────────
 
-  const inputPlaceholder =
-    state.mode === 'input' && state.inputType === 'text'
-      ? (schema[state.category]?.type === 'text'
-          ? (schema[state.category] as { placeholder?: string }).placeholder
-          : undefined) ?? `Type ${schema[state.category]?.label}...`
-      : state.mode === 'values' && schema[state.category]
-        ? `Search ${schema[state.category].label}...`
-        : placeholder;
+  const inputPlaceholder = getPlaceholder(state, schema, placeholder);
 
   return {
     tokens,
