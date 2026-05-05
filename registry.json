@@ -17,6 +17,36 @@
           "path": "src/components/filter-tokens.tsx",
           "type": "registry:component",
           "target": "components/filter-tokens.tsx"
+        },
+        {
+          "path": "src/components/parts/trigger.tsx",
+          "type": "registry:component",
+          "target": "components/parts/trigger.tsx"
+        },
+        {
+          "path": "src/components/parts/chip.tsx",
+          "type": "registry:component",
+          "target": "components/parts/chip.tsx"
+        },
+        {
+          "path": "src/components/parts/item-indicator.tsx",
+          "type": "registry:component",
+          "target": "components/parts/item-indicator.tsx"
+        },
+        {
+          "path": "src/components/parts/calendar-panel.tsx",
+          "type": "registry:component",
+          "target": "components/parts/calendar-panel.tsx"
+        },
+        {
+          "path": "src/components/parts/number-panel.tsx",
+          "type": "registry:component",
+          "target": "components/parts/number-panel.tsx"
+        },
+        {
+          "path": "src/components/parts/date-time-row.tsx",
+          "type": "registry:component",
+          "target": "components/parts/date-time-row.tsx"
         }
       ]
     },
@@ -34,6 +64,36 @@
           "path": "src/components/filter-tokens.base.tsx",
           "type": "registry:component",
           "target": "components/filter-tokens.tsx"
+        },
+        {
+          "path": "src/components/parts/trigger.tsx",
+          "type": "registry:component",
+          "target": "components/parts/trigger.tsx"
+        },
+        {
+          "path": "src/components/parts/chip.tsx",
+          "type": "registry:component",
+          "target": "components/parts/chip.tsx"
+        },
+        {
+          "path": "src/components/parts/item-indicator.tsx",
+          "type": "registry:component",
+          "target": "components/parts/item-indicator.tsx"
+        },
+        {
+          "path": "src/components/parts/calendar-panel.tsx",
+          "type": "registry:component",
+          "target": "components/parts/calendar-panel.tsx"
+        },
+        {
+          "path": "src/components/parts/number-panel.tsx",
+          "type": "registry:component",
+          "target": "components/parts/number-panel.tsx"
+        },
+        {
+          "path": "src/components/parts/date-time-row.tsx",
+          "type": "registry:component",
+          "target": "components/parts/date-time-row.tsx"
         }
       ]
     }
