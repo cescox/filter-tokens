@@ -57,8 +57,18 @@
     "registry:build": "node scripts/build-registry.mjs",
     "test": "vitest run",
     "test:watch": "vitest",
-    "lint": "tsc --noEmit"
+    "lint": "tsc --noEmit",
+    "size": "size-limit"
   },
+  "size-limit": [
+    {
+      "name": "useFilterTokens (hook only)",
+      "path": "dist/index.js",
+      "import": "{ useFilterTokens }",
+      "limit": "5 kB",
+      "ignore": ["react", "react-dom"]
+    }
+  ],
   "peerDependencies": {
     "@base-ui/react": "^1.0.0",
     "@radix-ui/react-popover": "^1.1.0",
@@ -71,12 +81,17 @@
     "tailwind-merge": "^3.0.0"
   },
   "peerDependenciesMeta": {
-    "@base-ui/react": { "optional": true },
-    "@radix-ui/react-popover": { "optional": true }
+    "@base-ui/react": {
+      "optional": true
+    },
+    "@radix-ui/react-popover": {
+      "optional": true
+    }
   },
   "devDependencies": {
     "@base-ui/react": "^1.4.1",
     "@radix-ui/react-popover": "^1.1.15",
+    "@size-limit/preset-small-lib": "^12.1.0",
     "@tailwindcss/vite": "^4.1.4",
     "@testing-library/jest-dom": "^6.6.3",
     "@testing-library/react": "^16.3.0",
@@ -93,6 +108,7 @@
     "react-day-picker": "^9.14.0",
     "react-dom": "^19.1.0",
     "shadcn": "^4.2.0",
+    "size-limit": "^12.1.0",
     "tailwind-merge": "^3.0.2",
     "tailwindcss": "^4.1.4",
     "tsx": "^4.19.0",
