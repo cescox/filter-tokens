@@ -24,14 +24,34 @@
           "target": "components/parts/trigger.tsx"
         },
         {
-          "path": "src/components/parts/chip.tsx",
+          "path": "src/components/parts/token.tsx",
           "type": "registry:component",
-          "target": "components/parts/chip.tsx"
+          "target": "components/parts/token.tsx"
         },
         {
           "path": "src/components/parts/item-indicator.tsx",
           "type": "registry:component",
           "target": "components/parts/item-indicator.tsx"
+        },
+        {
+          "path": "src/components/parts/listbox.tsx",
+          "type": "registry:component",
+          "target": "components/parts/listbox.tsx"
+        },
+        {
+          "path": "src/components/parts/header.tsx",
+          "type": "registry:component",
+          "target": "components/parts/header.tsx"
+        },
+        {
+          "path": "src/components/parts/panels.tsx",
+          "type": "registry:component",
+          "target": "components/parts/panels.tsx"
+        },
+        {
+          "path": "src/components/parts/panel-actions.tsx",
+          "type": "registry:component",
+          "target": "components/parts/panel-actions.tsx"
         },
         {
           "path": "src/components/parts/calendar-panel.tsx",
@@ -71,14 +91,34 @@
           "target": "components/parts/trigger.tsx"
         },
         {
-          "path": "src/components/parts/chip.tsx",
+          "path": "src/components/parts/token.tsx",
           "type": "registry:component",
-          "target": "components/parts/chip.tsx"
+          "target": "components/parts/token.tsx"
         },
         {
           "path": "src/components/parts/item-indicator.tsx",
           "type": "registry:component",
           "target": "components/parts/item-indicator.tsx"
+        },
+        {
+          "path": "src/components/parts/listbox.tsx",
+          "type": "registry:component",
+          "target": "components/parts/listbox.tsx"
+        },
+        {
+          "path": "src/components/parts/header.tsx",
+          "type": "registry:component",
+          "target": "components/parts/header.tsx"
+        },
+        {
+          "path": "src/components/parts/panels.tsx",
+          "type": "registry:component",
+          "target": "components/parts/panels.tsx"
+        },
+        {
+          "path": "src/components/parts/panel-actions.tsx",
+          "type": "registry:component",
+          "target": "components/parts/panel-actions.tsx"
         },
         {
           "path": "src/components/parts/calendar-panel.tsx",
